@@ -8,10 +8,8 @@ plugins {
 group = 'ua.com.dxrkness'
 version = '0.0.1-SNAPSHOT'
 
-java {
-  toolchain {
-    languageVersion = JavaLanguageVersion.of(21)
-  }
+tasks.withType(JavaCompile).configureEach {
+  options.release = 21
 }
 
 application {
@@ -24,10 +22,11 @@ repositories {
 
 dependencies {
   implementation(libs.spring.boot.starter.web)
+
   testImplementation(libs.spring.boot.starter.test)
   testRuntimeOnly(libs.junit.platformLauncher)
 }
 
-tasks.named('test') {
+tasks.withType(Test).configureEach {
   useJUnitPlatform()
 }

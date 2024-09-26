@@ -1,15 +1,16 @@
 [versions]
 spring-boot-version = "3.3.4"
 spring-bom-version = "1.1.6"
+graalvm-native-buildTools-version = "0.10.3"
 
 [libraries]
-spring-boot-starter-web = { module = 'org.springframework.boot:spring-boot-starter-web' }
-spring-boot-starter-test = { module = 'org.springframework.boot:spring-boot-starter-test' }
-junit-platformLauncher = { module = 'org.junit.platform:junit-platform-launcher' }
+spring-boot-starter-web = { module = "org.springframework.boot:spring-boot-starter-web" }
+spring-boot-starter-test = { module = "org.springframework.boot:spring-boot-starter-test" }
+junit-platformLauncher = { module = "org.junit.platform:junit-platform-launcher" }
 
 [plugins]
-java = { id = 'java' }
-java-application = { id = 'application' }
-spring-boot = { id = 'org.springframework.boot', version.ref = "spring-boot-version"  }
-spring-bom = { id = 'io.spring.dependency-management', version.ref = "spring-bom-version" }
-graalvm-native-buildTools = { id = 'org.graalvm.buildtools.native', version = '' }
+java = { id = "java" }
+java-application = { id = "application" }
+spring-boot = { id = "org.springframework.boot", version.ref = "spring-boot-version"  }
+spring-bom = { id = "io.spring.dependency-management", version.ref = "spring-bom-version" }
+graalvm-native-buildTools = { id = "org.graalvm.buildtools.native", version.ref = "graalvm-native-buildTools-version" }
