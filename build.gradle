@@ -1,8 +1,8 @@
 plugins {
-  alias(libs.plugins.javaPlugin)
-  alias(libs.plugins.javaApplicationPlugin)
-  alias(libs.plugins.springBootPlugin)
-  alias(libs.plugins.springBOMPlugin)
+  alias(libs.plugins.java)
+  alias(libs.plugins.java.application)
+  alias(libs.plugins.spring.boot)
+  alias(libs.plugins.spring.bom)
 }
 
 group = 'ua.com.dxrkness'
@@ -23,9 +23,9 @@ repositories {
 }
 
 dependencies {
-  implementation(libs.springBootStarterWeb)
-  testImplementation(libs.springBootStarterTest)
-  testRuntimeOnly(libs.junitPlatformLauncher)
+  implementation(libs.spring.boot.starter.web)
+  testImplementation(libs.spring.boot.starter.test)
+  testRuntimeOnly(libs.junit.platformLauncher)
 }
 
 tasks.named('test') {
