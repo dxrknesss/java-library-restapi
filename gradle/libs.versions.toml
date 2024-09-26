@@ -1,0 +1,14 @@
+[versions]
+springBootVersion = "3.3.4"
+springBOMVersion = "1.1.6"
+
+[libraries]
+springBootStarterWeb = { module = 'org.springframework.boot:spring-boot-starter-web' }
+springBootStarterTest = { module = 'org.springframework.boot:spring-boot-starter-test' }
+junitPlatformLauncher = { module = 'org.junit.platform:junit-platform-launcher' }
+
+[plugins]
+javaPlugin = { id = 'java' }
+javaApplicationPlugin = { id = 'application' }
+springBootPlugin = { id = 'org.springframework.boot', version.ref = "springBootVersion"  }
+springBOMPlugin = { id = 'io.spring.dependency-management', version.ref = "springBOMVersion" }
