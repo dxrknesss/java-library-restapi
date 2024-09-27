@@ -1,8 +1,26 @@
 spring:
   application:
     name: devtiro-spring-boot-course
+
+---
+spring:
+  config:
+    activate:
+      on-profile: 'dev'
   datasource:
     url: jdbc:h2:mem:some_strange_name_for_a_database
     driver-class-name: org.h2.Driver
     username: sa
     password: assw0rd
+---
+spring:
+  config:
+    activate:
+      on-profile: 'not-dev'
+  datasource:
+    url: jdbc:postgresql://localhost:5432/potniy_zadr
+    username: potniy_zadr
+    password: doNOTchangemePLEASE
+  sql:
+    init:
+      mode: always

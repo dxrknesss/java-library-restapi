@@ -5,3 +5,5 @@ services:
     environment:
       POSTGRES_USER: potniy_zadr
       POSTGRES_PASSWORD: doNOTchangemePLEASE
+    ports:
+      - "5432:5432"
