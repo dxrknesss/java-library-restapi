@@ -10,6 +10,7 @@ junit-platformLauncher = { module = "org.junit.platform:junit-platform-launcher"
 spring-boot-starter-jdbc = { module = 'org.springframework.boot:spring-boot-starter-jdbc' }
 lombok = { module = 'org.projectlombok:lombok' }
 h2 = { module = 'com.h2database:h2' }
+postgresql = { module = 'org.postgresql:postgresql' }
 
 [plugins]
 java = { id = "java" }

@@ -1,0 +1,7 @@
+services:
+  postgres:
+    image: docker.io/postgres:16-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: potniy_zadr
+      POSTGRES_PASSWORD: doNOTchangemePLEASE
