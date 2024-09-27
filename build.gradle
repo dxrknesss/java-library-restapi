@@ -28,6 +28,7 @@ dependencies {
   annotationProcessor(libs.lombok)
   runtimeOnly(libs.postgresql)
 
+  testRuntimeOnly(libs.h2)
   testImplementation(libs.spring.boot.starter.test)
   testRuntimeOnly(libs.junit.platformLauncher)
 }
