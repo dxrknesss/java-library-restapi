@@ -19,7 +19,7 @@ public final class TestDataUtil {
         return new Book(
                 "123-123",
                 "Quatrians",
-                createTestAuthor()
+                new Author(1L, null, null)
         );
     }
 }

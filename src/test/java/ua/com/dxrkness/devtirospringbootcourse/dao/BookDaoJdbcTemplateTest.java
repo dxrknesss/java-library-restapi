@@ -8,8 +8,6 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.jdbc.core.JdbcTemplate;
-import ua.com.dxrkness.devtirospringbootcourse.domain.Author;
-import ua.com.dxrkness.devtirospringbootcourse.domain.Book;
 
 import static org.mockito.ArgumentMatchers.eq;
 
