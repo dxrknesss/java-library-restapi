@@ -10,8 +10,8 @@ import ua.com.dxrkness.devtirospringbootcourse.TestDataUtil;
 import ua.com.dxrkness.devtirospringbootcourse.domain.Author;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 @SpringBootTest
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
@@ -72,5 +72,30 @@ public class AuthorRepositoryIntegrationTest {
         var authorFromDb = authorRepository.findById(singleAuthor.getId());
 
         Assertions.assertTrue(authorFromDb.isEmpty());
+    }
+
+    @Test
+    public void getAuthorsWithAgeLessThan_returnsValidAuthors() {
+        authorRepository.saveAll(authorList);
+
+        var authorsYoungerThan100 = authorRepository.findAllByAgeLessThan(100);
+
+        Assertions.assertIterableEquals(
+                Set.of(TestDataUtil.createTestAuthorB()),
+                authorsYoungerThan100
+        );
+    }
+
+    @Test
+    public void getAuthorsWithAgeGreaterThan_returnsValidAuthors() {
+        authorRepository.saveAll(authorList);
+
+        var authorsOlderThan100 = authorRepository.findAllWithAgeGreaterThan(100);
+
+        System.out.println(authorsOlderThan100);
+        Assertions.assertIterableEquals(
+                Set.of(TestDataUtil.createTestAuthorA(), TestDataUtil.createTestAuthorC()),
+                authorsOlderThan100
+        );
     }
 }
