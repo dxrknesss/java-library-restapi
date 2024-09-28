@@ -54,7 +54,7 @@ public class BookDaoJdbcTemplateIntegrationTest {
     }
 
     @Test
-    public void book_thatIsCreated_updatesCorrectly() {
+    public void book_thatExists_updatesCorrectly() {
         var book = TestDataUtil.createTestBookA();
         var bookIsbn = book.getIsbn();
 
@@ -70,7 +70,7 @@ public class BookDaoJdbcTemplateIntegrationTest {
     }
 
     @Test
-    public void book_thatIsCreated_deletesCorrectly() {
+    public void book_thatExists_deletesCorrectly() {
         var book = TestDataUtil.createTestBookA();
 
         bookDao.delete(book.getIsbn());

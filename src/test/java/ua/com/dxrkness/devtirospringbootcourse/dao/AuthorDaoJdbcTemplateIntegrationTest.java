@@ -1,15 +1,28 @@
 package ua.com.dxrkness.devtirospringbootcourse.dao;
 
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.DirtiesContext;
+import ua.com.dxrkness.devtirospringbootcourse.domain.Author;
+
+import java.util.List;
 
 @SpringBootTest
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 public class AuthorDaoJdbcTemplateIntegrationTest {
-    private AuthorDaoJdbcTemplate authorDao;
+    private final AuthorDaoJdbcTemplate authorDao;
+
+    private Author singleAuthor;
+    private List<Author> authorsList;
+
+    @BeforeEach
+    public void setup() {
+        singleAuthor = TestDataUtil.createTestAuthorA();
+        authorsList = TestDataUtil.createTestAuthorsList();
+    }
 
     @Autowired
     public AuthorDaoJdbcTemplateIntegrationTest(AuthorDaoJdbcTemplate authorDao) {
@@ -18,41 +31,47 @@ public class AuthorDaoJdbcTemplateIntegrationTest {
 
     @Test
     public void author_canBeCreated_andThen_retrieved() {
-        var author = TestDataUtil.createTestAuthorA();
+        authorDao.create(singleAuthor);
 
-        authorDao.create(author);
-        var optionalAuthor = authorDao.findOne(author.getId());
+        var optionalAuthor = authorDao.findOne(singleAuthor.getId());
 
         Assertions.assertTrue(optionalAuthor.isPresent());
-        Assertions.assertEquals(optionalAuthor.get(), author);
+        Assertions.assertEquals(optionalAuthor.get(), singleAuthor);
     }
 
     @Test
     public void manyAuthors_canBeCreated_andThen_retrieved() {
-        var dummyAuthors = TestDataUtil.createTestAuthorsList();
-        for (var author : dummyAuthors) {
+        for (var author : authorsList) {
             authorDao.create(author);
         }
 
         var authorsFromDb = authorDao.findAll();
 
-        Assertions.assertEquals(dummyAuthors.size(), authorsFromDb.size());
-        Assertions.assertIterableEquals(dummyAuthors, authorsFromDb);
+        Assertions.assertEquals(authorsList.size(), authorsFromDb.size());
+        Assertions.assertIterableEquals(authorsList, authorsFromDb);
     }
 
     @Test
-    public void author_thatIsCreated_updatesCorrectly() {
-        var author = TestDataUtil.createTestAuthorA();
-        var authorId = author.getId();
-        authorDao.create(author);
+    public void author_thatExists_updatesCorrectly() {
+        var authorId = singleAuthor.getId();
+        authorDao.create(singleAuthor);
 
-        author.setId(222L);
-        author.setName("update");
-        authorDao.update(authorId, author);
-
-        var updatedAuthor = authorDao.findOne(author.getId());
+        singleAuthor.setId(222L);
+        singleAuthor.setName("update");
+        authorDao.update(authorId, singleAuthor);
+        var updatedAuthor = authorDao.findOne(singleAuthor.getId());
 
         Assertions.assertTrue(updatedAuthor.isPresent());
-        Assertions.assertEquals(updatedAuthor.get(), author);
+        Assertions.assertEquals(updatedAuthor.get(), singleAuthor);
+    }
+
+    @Test
+    public void author_thatExists_canBeDeleted() {
+        authorDao.create(singleAuthor);
+
+        authorDao.delete(singleAuthor.getId());
+        var authorFromDb = authorDao.findOne(singleAuthor.getId());
+
+        Assertions.assertTrue(authorFromDb.isEmpty());
     }
 }

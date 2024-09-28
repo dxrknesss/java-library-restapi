@@ -66,4 +66,16 @@ public class AuthorDaoJdbcTemplateTest {
                 eq(author.getId()), eq(author.getName()), eq(author.getAge()), eq(authorId)
         );
     }
+
+    @Test
+    public void delete_generatesValidSql() {
+        var authorId = 2L;
+
+        authorDao.delete(authorId);
+
+        Mockito.verify(jdbcTemplate).update(
+                eq("DELETE FROM authors WHERE id = ?"),
+                eq(authorId)
+        );
+    }
 }
