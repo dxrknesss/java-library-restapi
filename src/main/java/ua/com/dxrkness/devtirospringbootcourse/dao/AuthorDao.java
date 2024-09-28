@@ -9,4 +9,5 @@ public interface AuthorDao {
     void create(Author author);
     Optional<Author> findOne(Long id);
     List<Author> findAll();
+    void update(Long authorId, Author newAuthor);
 }
