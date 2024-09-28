@@ -8,6 +8,7 @@ import ua.com.dxrkness.devtirospringbootcourse.domain.Book;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.List;
 import java.util.Optional;
 
 @Component
@@ -35,6 +36,14 @@ public class BookDaoJdbcTemplate implements BookDao {
         );
 
         return results.stream().findFirst();
+    }
+
+    @Override
+    public List<Book> findAll() {
+        return jdbcTemplate.query(
+                "SELECT * FROM books",
+                new BookRowMapper()
+        );
     }
 
     public static class BookRowMapper implements RowMapper<Book> {

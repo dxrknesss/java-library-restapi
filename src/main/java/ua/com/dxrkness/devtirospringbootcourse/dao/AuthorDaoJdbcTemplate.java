@@ -7,6 +7,7 @@ import ua.com.dxrkness.devtirospringbootcourse.domain.Author;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.List;
 import java.util.Optional;
 
 @Component
@@ -34,6 +35,14 @@ public class AuthorDaoJdbcTemplate implements AuthorDao {
         );
 
         return results.stream().findFirst();
+    }
+
+    @Override
+    public List<Author> findAll() {
+        return jdbcTemplate.query(
+                "SELECT * FROM authors",
+                new AuthorRowMapper()
+        );
     }
 
     public static class AuthorRowMapper implements RowMapper<Author> {
