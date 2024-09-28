@@ -21,7 +21,7 @@ public class BookDaoJdbcTemplateTest {
 
     @Test
     public void createBook_generatesValidSql() {
-        var book = TestDataUtil.createTestBook();
+        var book = TestDataUtil.createTestBookA();
 
         bookDao.create(book);
 

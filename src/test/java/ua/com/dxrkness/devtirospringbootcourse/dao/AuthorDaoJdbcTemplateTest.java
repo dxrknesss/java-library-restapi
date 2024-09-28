@@ -21,7 +21,7 @@ public class AuthorDaoJdbcTemplateTest {
 
     @Test
     public void createAuthor_generatesValidSql() {
-        var author = TestDataUtil.createTestAuthor();
+        var author = TestDataUtil.createTestAuthorA();
 
         authorDao.create(author);
 
