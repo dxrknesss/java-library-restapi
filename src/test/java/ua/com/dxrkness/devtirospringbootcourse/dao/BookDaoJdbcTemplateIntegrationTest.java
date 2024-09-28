@@ -3,9 +3,12 @@ package ua.com.dxrkness.devtirospringbootcourse.dao;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.DirtiesContext;
+
+import static org.mockito.ArgumentMatchers.eq;
 
 @SpringBootTest
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
@@ -48,5 +51,21 @@ public class BookDaoJdbcTemplateIntegrationTest {
 
         Assertions.assertEquals(dummyBooks.size(), booksFromDb.size());
         Assertions.assertIterableEquals(dummyBooks, booksFromDb);
+    }
+
+    @Test
+    public void book_thatIsCreated_updatesCorrectly() {
+        var book = TestDataUtil.createTestBookA();
+        var bookIsbn = book.getIsbn();
+
+        bookDao.create(book);
+        book.setIsbn("000000000000000000");
+        book.setTitle("Updated");
+        bookDao.update(bookIsbn, book);
+
+        var bookFromDb = bookDao.findOne(book.getIsbn());
+
+        Assertions.assertTrue(bookFromDb.isPresent());
+        Assertions.assertEquals(bookFromDb.get(), book);
     }
 }

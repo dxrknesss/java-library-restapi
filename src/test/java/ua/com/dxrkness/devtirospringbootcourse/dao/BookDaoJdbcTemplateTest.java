@@ -51,4 +51,21 @@ public class BookDaoJdbcTemplateTest {
                 ArgumentMatchers.<BookDaoJdbcTemplate.BookRowMapper>any()
         );
     }
+
+    @Test
+    public void update_generatesValidSql() {
+        var book = TestDataUtil.createTestBookA();
+        var bookIsbn = book.getIsbn();
+
+        book.setIsbn("000000000000000000");
+        book.setTitle("Updated");
+
+        bookDao.update(bookIsbn, book);
+
+        Mockito.verify(jdbcTemplate).update(
+                eq("UPDATE books SET isbn = ?, title = ?, author_id = ? WHERE isbn = ?"),
+                eq(book.getIsbn()), eq(book.getTitle()), eq(book.getAuthor().getId()),
+                eq(bookIsbn)
+        );
+    }
 }
