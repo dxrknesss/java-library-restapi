@@ -21,6 +21,6 @@ spring:
     url: jdbc:postgresql://localhost:5432/potniy_zadr
     username: potniy_zadr
     password: doNOTchangemePLEASE
-  sql:
-    init:
-      mode: always
+  jpa:
+    hibernate:
+      ddl-auto: update

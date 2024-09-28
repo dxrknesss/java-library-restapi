@@ -1,4 +1,4 @@
-package ua.com.dxrkness.devtirospringbootcourse.dao;
+package ua.com.dxrkness.devtirospringbootcourse;
 
 import ua.com.dxrkness.devtirospringbootcourse.domain.Author;
 import ua.com.dxrkness.devtirospringbootcourse.domain.Book;
