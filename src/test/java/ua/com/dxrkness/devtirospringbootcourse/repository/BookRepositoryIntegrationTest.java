@@ -13,7 +13,7 @@ import java.util.List;
 
 @SpringBootTest
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
-public class BookDaoJdbcTemplateIntegrationTest {
+public class BookRepositoryIntegrationTest {
     private final AuthorRepository authorDao;
     private final BookRepository bookRepository;
 
@@ -21,7 +21,7 @@ public class BookDaoJdbcTemplateIntegrationTest {
     private List<Book> bookList;
 
     @Autowired
-    public BookDaoJdbcTemplateIntegrationTest(BookRepository bookRepository, AuthorRepository authorRepository) {
+    public BookRepositoryIntegrationTest(BookRepository bookRepository, AuthorRepository authorRepository) {
         this.bookRepository = bookRepository;
         this.authorDao = authorRepository;
     }
