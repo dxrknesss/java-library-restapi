@@ -9,6 +9,7 @@ import org.springframework.test.annotation.DirtiesContext;
 import ua.com.dxrkness.devtirospringbootcourse.TestDataUtil;
 import ua.com.dxrkness.devtirospringbootcourse.domain.Book;
 
+import java.util.Collection;
 import java.util.List;
 
 @SpringBootTest
@@ -44,12 +45,11 @@ public class BookRepositoryIntegrationTest {
         Assertions.assertEquals(optionalBook.get(), singleBook);
     }
 
-    /*
     @Test
     public void manyBooks_canBeCreated_andThen_retrieved() {
         bookRepository.saveAll(bookList);
 
-        var booksFromDb = bookRepository.findAll();
+        var booksFromDb = (Collection<Book>) bookRepository.findAll();
 
         Assertions.assertEquals(bookList.size(), booksFromDb.size());
         Assertions.assertIterableEquals(bookList, booksFromDb);
@@ -57,12 +57,10 @@ public class BookRepositoryIntegrationTest {
 
     @Test
     public void book_thatExists_updatesCorrectly() {
-        var bookIsbn = singleBook.getIsbn();
-
         bookRepository.save(singleBook);
-        singleBook.setIsbn("000000000000000000");
+
         singleBook.setTitle("Updated");
-        bookRepository.update(bookIsbn, singleBook);
+        bookRepository.save(singleBook);
         var bookFromDb = bookRepository.findById(singleBook.getIsbn());
 
         Assertions.assertTrue(bookFromDb.isPresent());
@@ -78,5 +76,4 @@ public class BookRepositoryIntegrationTest {
 
         Assertions.assertTrue(bookFromDb.isEmpty());
     }
-     */
 }

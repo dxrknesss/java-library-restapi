@@ -9,6 +9,8 @@ import org.springframework.test.annotation.DirtiesContext;
 import ua.com.dxrkness.devtirospringbootcourse.TestDataUtil;
 import ua.com.dxrkness.devtirospringbootcourse.domain.Author;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 @SpringBootTest
@@ -40,24 +42,22 @@ public class AuthorRepositoryIntegrationTest {
         Assertions.assertEquals(optionalAuthor.get(), singleAuthor);
     }
 
-    /*
     @Test
     public void manyAuthors_canBeCreated_andThen_retrieved() {
         authorRepository.saveAll(authorList);
 
-        var authorsFromDb = authorRepository.findAll();
+        var authorsFromDb = (Collection<Author>) authorRepository.findAll();
 
         Assertions.assertEquals(authorList.size(), authorsFromDb.size());
-        Assertions.assertIterableEquals(authorList, authorsFromDb); }
+        Assertions.assertIterableEquals(authorList, authorsFromDb);
+    }
 
     @Test
     public void author_thatExists_updatesCorrectly() {
-        var authorId = singleAuthor.getId();
         authorRepository.save(singleAuthor);
 
-        singleAuthor.setId(222L);
         singleAuthor.setName("update");
-        authorRepository.update(authorId, singleAuthor);
+        authorRepository.save(singleAuthor);
         var updatedAuthor = authorRepository.findById(singleAuthor.getId());
 
         Assertions.assertTrue(updatedAuthor.isPresent());
@@ -73,5 +73,4 @@ public class AuthorRepositoryIntegrationTest {
 
         Assertions.assertTrue(authorFromDb.isEmpty());
     }
-     */
 }
