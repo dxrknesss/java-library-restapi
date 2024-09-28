@@ -2,15 +2,19 @@
 spring-boot-version = "3.3.4"
 spring-bom-version = "1.1.6"
 graalvm-native-buildTools-version = "0.10.3"
+mapstruct-version = "1.6.2"
 
 [libraries]
 spring-boot-starter-web = { module = "org.springframework.boot:spring-boot-starter-web" }
 spring-boot-starter-test = { module = "org.springframework.boot:spring-boot-starter-test" }
-junit-platformLauncher = { module = "org.junit.platform:junit-platform-launcher" }
 spring-boot-starter-data-jpa = { module = 'org.springframework.boot:spring-boot-starter-data-jpa' }
+
+junit-platformLauncher = { module = "org.junit.platform:junit-platform-launcher" }
 lombok = { module = 'org.projectlombok:lombok' }
 h2 = { module = 'com.h2database:h2' }
 postgresql = { module = 'org.postgresql:postgresql' }
+mapstruct = { module = 'org.mapstruct:mapstruct', version.ref = "mapstruct-version" }
+mapstruct-processor = { module = "org.mapstruct:mapstruct-processor", version.ref = "mapstruct-version" }
 
 [plugins]
 java = { id = "java" }
