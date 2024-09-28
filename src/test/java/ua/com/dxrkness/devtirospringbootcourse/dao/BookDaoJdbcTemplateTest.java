@@ -68,4 +68,15 @@ public class BookDaoJdbcTemplateTest {
                 eq(bookIsbn)
         );
     }
+
+    @Test
+    public void delete_generatesValidSql() {
+        var isbn = "123-123";
+        bookDao.delete(isbn);
+
+        Mockito.verify(jdbcTemplate).update(
+                eq("DELETE FROM books WHERE isbn = ?"),
+                eq(isbn)
+        );
+    }
 }

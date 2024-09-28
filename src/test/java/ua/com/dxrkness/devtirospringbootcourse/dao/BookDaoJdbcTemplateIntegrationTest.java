@@ -68,4 +68,15 @@ public class BookDaoJdbcTemplateIntegrationTest {
         Assertions.assertTrue(bookFromDb.isPresent());
         Assertions.assertEquals(bookFromDb.get(), book);
     }
+
+    @Test
+    public void book_thatIsCreated_deletesCorrectly() {
+        var book = TestDataUtil.createTestBookA();
+
+        bookDao.delete(book.getIsbn());
+
+        var bookFromDb = bookDao.findOne(book.getIsbn());
+
+        Assertions.assertTrue(bookFromDb.isEmpty());
+    }
 }
