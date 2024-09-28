@@ -33,7 +33,7 @@ public class AuthorDaoJdbcTemplateTest {
 
     @Test
     public void findOne_generatesValidSql() {
-        var authorOptional = authorDao.findOne(1L);
+        authorDao.findOne(1L);
 
         Mockito.verify(jdbcTemplate).query(
                 eq("SELECT * FROM authors WHERE id = ? LIMIT 1"),
@@ -44,7 +44,7 @@ public class AuthorDaoJdbcTemplateTest {
 
     @Test
     public void findAll_generatesValidSql() {
-        var results = authorDao.findAll();
+        authorDao.findAll();
 
         Mockito.verify(jdbcTemplate).query(
                 eq("SELECT * FROM authors"),

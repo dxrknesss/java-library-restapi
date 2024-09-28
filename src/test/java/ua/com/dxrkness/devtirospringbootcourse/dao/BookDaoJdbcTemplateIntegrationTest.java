@@ -3,18 +3,21 @@ package ua.com.dxrkness.devtirospringbootcourse.dao;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.DirtiesContext;
+import ua.com.dxrkness.devtirospringbootcourse.domain.Book;
 
-import static org.mockito.ArgumentMatchers.eq;
+import java.util.List;
 
 @SpringBootTest
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 public class BookDaoJdbcTemplateIntegrationTest {
     private final AuthorDao authorDao;
     private final BookDaoJdbcTemplate bookDao;
+
+    private Book singleBook;
+    private List<Book> bookList;
 
     @Autowired
     public BookDaoJdbcTemplateIntegrationTest(BookDaoJdbcTemplate bookDao, AuthorDao authorDao) {
@@ -24,6 +27,9 @@ public class BookDaoJdbcTemplateIntegrationTest {
 
     @BeforeEach
     public void setup() {
+        singleBook = TestDataUtil.createTestBookA();
+        bookList = TestDataUtil.createTestBooksList();
+
         for (var author : TestDataUtil.createTestAuthorsList()) {
             authorDao.create(author);
         }
@@ -31,51 +37,45 @@ public class BookDaoJdbcTemplateIntegrationTest {
 
     @Test
     public void book_canBeCreated_andThen_retrieved() {
-        var book = TestDataUtil.createTestBookA();
+        bookDao.create(singleBook);
 
-        bookDao.create(book);
-        var optionalBook = bookDao.findOne(book.getIsbn());
+        var optionalBook = bookDao.findOne(singleBook.getIsbn());
 
         Assertions.assertTrue(optionalBook.isPresent());
-        Assertions.assertEquals(optionalBook.get(), book);
+        Assertions.assertEquals(optionalBook.get(), singleBook);
     }
 
     @Test
     public void manyBooks_canBeCreated_andThen_retrieved() {
-        var dummyBooks = TestDataUtil.createTestBooksList();
-        for (var book : dummyBooks) {
+        for (var book : bookList) {
             bookDao.create(book);
         }
-
         var booksFromDb = bookDao.findAll();
 
-        Assertions.assertEquals(dummyBooks.size(), booksFromDb.size());
-        Assertions.assertIterableEquals(dummyBooks, booksFromDb);
+        Assertions.assertEquals(bookList.size(), booksFromDb.size());
+        Assertions.assertIterableEquals(bookList, booksFromDb);
     }
 
     @Test
     public void book_thatExists_updatesCorrectly() {
-        var book = TestDataUtil.createTestBookA();
-        var bookIsbn = book.getIsbn();
+        var bookIsbn = singleBook.getIsbn();
 
-        bookDao.create(book);
-        book.setIsbn("000000000000000000");
-        book.setTitle("Updated");
-        bookDao.update(bookIsbn, book);
-
-        var bookFromDb = bookDao.findOne(book.getIsbn());
+        bookDao.create(singleBook);
+        singleBook.setIsbn("000000000000000000");
+        singleBook.setTitle("Updated");
+        bookDao.update(bookIsbn, singleBook);
+        var bookFromDb = bookDao.findOne(singleBook.getIsbn());
 
         Assertions.assertTrue(bookFromDb.isPresent());
-        Assertions.assertEquals(bookFromDb.get(), book);
+        Assertions.assertEquals(bookFromDb.get(), singleBook);
     }
 
     @Test
     public void book_thatExists_deletesCorrectly() {
-        var book = TestDataUtil.createTestBookA();
+        bookDao.create(singleBook);
 
-        bookDao.delete(book.getIsbn());
-
-        var bookFromDb = bookDao.findOne(book.getIsbn());
+        bookDao.delete(singleBook.getIsbn());
+        var bookFromDb = bookDao.findOne(singleBook.getIsbn());
 
         Assertions.assertTrue(bookFromDb.isEmpty());
     }

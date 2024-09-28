@@ -16,12 +16,12 @@ public class AuthorDaoJdbcTemplateIntegrationTest {
     private final AuthorDaoJdbcTemplate authorDao;
 
     private Author singleAuthor;
-    private List<Author> authorsList;
+    private List<Author> authorList;
 
     @BeforeEach
     public void setup() {
         singleAuthor = TestDataUtil.createTestAuthorA();
-        authorsList = TestDataUtil.createTestAuthorsList();
+        authorList = TestDataUtil.createTestAuthorsList();
     }
 
     @Autowired
@@ -41,14 +41,14 @@ public class AuthorDaoJdbcTemplateIntegrationTest {
 
     @Test
     public void manyAuthors_canBeCreated_andThen_retrieved() {
-        for (var author : authorsList) {
+        for (var author : authorList) {
             authorDao.create(author);
         }
 
         var authorsFromDb = authorDao.findAll();
 
-        Assertions.assertEquals(authorsList.size(), authorsFromDb.size());
-        Assertions.assertIterableEquals(authorsList, authorsFromDb);
+        Assertions.assertEquals(authorList.size(), authorsFromDb.size());
+        Assertions.assertIterableEquals(authorList, authorsFromDb);
     }
 
     @Test
