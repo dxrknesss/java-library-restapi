@@ -2,6 +2,7 @@ package ua.com.dxrkness.devtirospringbootcourse.dao;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentMatchers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -29,6 +30,17 @@ public class BookDaoJdbcTemplateTest {
         Mockito.verify(jdbcTemplate).update(
                 eq("INSERT INTO books (isbn, title, author_id) VALUES (?, ?, ?)"),
                 eq("123-123"), eq("Quatrians"), eq(1L)
+        );
+    }
+
+    @Test
+    public void findOne_generatesValidSql() {
+        var bookOptional = bookDao.findOne("123-123");
+
+        Mockito.verify(jdbcTemplate).query(
+                eq("SELECT * FROM books WHERE isbn = ? LIMIT 1"),
+                ArgumentMatchers.<BookDaoJdbcTemplate.BookRowMapper>any(),
+                eq("123-123")
         );
     }
 }
