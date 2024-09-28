@@ -51,4 +51,19 @@ public class AuthorDaoJdbcTemplateTest {
                 ArgumentMatchers.<AuthorDaoJdbcTemplate.AuthorRowMapper>any()
         );
     }
+
+    @Test
+    public void update_generatesValidSql() {
+        var author = TestDataUtil.createTestAuthorA();
+        var authorId = author.getId();
+
+        author.setName("UPDATED");
+        author.setId(222L);
+        authorDao.update(authorId, author);
+
+        Mockito.verify(jdbcTemplate).update(
+                eq("UPDATE authors SET id = ?, name = ?, age = ? WHERE id = ?"),
+                eq(author.getId()), eq(author.getName()), eq(author.getAge()), eq(authorId)
+        );
+    }
 }

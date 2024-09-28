@@ -39,4 +39,20 @@ public class AuthorDaoJdbcTemplateIntegrationTest {
         Assertions.assertEquals(dummyAuthors.size(), authorsFromDb.size());
         Assertions.assertIterableEquals(dummyAuthors, authorsFromDb);
     }
+
+    @Test
+    public void author_thatIsCreated_updatesCorrectly() {
+        var author = TestDataUtil.createTestAuthorA();
+        var authorId = author.getId();
+        authorDao.create(author);
+
+        author.setId(222L);
+        author.setName("update");
+        authorDao.update(authorId, author);
+
+        var updatedAuthor = authorDao.findOne(author.getId());
+
+        Assertions.assertTrue(updatedAuthor.isPresent());
+        Assertions.assertEquals(updatedAuthor.get(), author);
+    }
 }
