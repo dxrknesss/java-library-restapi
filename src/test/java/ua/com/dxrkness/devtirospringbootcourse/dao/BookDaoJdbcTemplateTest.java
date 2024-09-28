@@ -23,13 +23,13 @@ public class BookDaoJdbcTemplateTest {
 
     @Test
     public void createBook_generatesValidSql() {
-        var book = new Book("123-123", "Quatrians", new Author(1L, "Omar Hayam", 600));
+        var book = TestDataUtil.createTestBook();
 
         bookDao.create(book);
 
         Mockito.verify(jdbcTemplate).update(
                 eq("INSERT INTO books (isbn, title, author_id) VALUES (?, ?, ?)"),
-                eq("123-123"), eq("Quatrians"), eq(1L)
+                eq(book.getIsbn()), eq(book.getTitle()), eq(book.getAuthor().getId())
         );
     }
 

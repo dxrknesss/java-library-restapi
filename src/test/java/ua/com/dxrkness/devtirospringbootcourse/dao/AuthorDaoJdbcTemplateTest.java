@@ -25,13 +25,13 @@ public class AuthorDaoJdbcTemplateTest {
 
     @Test
     public void createAuthor_generatesValidSql() {
-        var author = new Author(1L, "Omar Hayam", 600);
+        var author = TestDataUtil.createTestAuthor();
 
         authorDao.create(author);
 
         Mockito.verify(jdbcTemplate).update(
                 eq("INSERT INTO authors (id, name, age) VALUES (?, ?, ?)"),
-                eq(1L), eq("Omar Hayam"), eq(600)
+                eq(author.getId()), eq(author.getName()), eq(author.getAge())
         );
     }
 
