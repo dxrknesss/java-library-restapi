@@ -2,12 +2,14 @@ package ua.com.dxrkness.devtirospringbootcourse.dao;
 
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
+import org.springframework.stereotype.Component;
 import ua.com.dxrkness.devtirospringbootcourse.domain.Author;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Optional;
 
+@Component
 public class AuthorDaoJdbcTemplate implements AuthorDao {
     private final JdbcTemplate jdbcTemplate;
 
