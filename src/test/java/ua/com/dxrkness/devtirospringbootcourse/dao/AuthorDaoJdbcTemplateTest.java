@@ -1,6 +1,5 @@
 package ua.com.dxrkness.devtirospringbootcourse.dao;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentMatchers;
@@ -9,10 +8,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.RowMapper;
-import ua.com.dxrkness.devtirospringbootcourse.domain.Author;
 
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 
 @ExtendWith(MockitoExtension.class)
@@ -43,6 +39,16 @@ public class AuthorDaoJdbcTemplateTest {
                 eq("SELECT * FROM authors WHERE id = ? LIMIT 1"),
                 ArgumentMatchers.<AuthorDaoJdbcTemplate.AuthorRowMapper>any(),
                 eq(1L)
+        );
+    }
+
+    @Test
+    public void findAll_generatesValidSql() {
+        var results = authorDao.findAll();
+
+        Mockito.verify(jdbcTemplate).query(
+                eq("SELECT * FROM authors"),
+                ArgumentMatchers.<AuthorDaoJdbcTemplate.AuthorRowMapper>any()
         );
     }
 }

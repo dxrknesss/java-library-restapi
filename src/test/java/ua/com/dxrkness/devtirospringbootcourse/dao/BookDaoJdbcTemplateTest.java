@@ -41,4 +41,14 @@ public class BookDaoJdbcTemplateTest {
                 eq("123-123")
         );
     }
+
+    @Test
+    public void findAll_generatesValidSql() {
+        bookDao.findAll();
+
+        Mockito.verify(jdbcTemplate).query(
+                eq("SELECT * FROM books"),
+                ArgumentMatchers.<BookDaoJdbcTemplate.BookRowMapper>any()
+        );
+    }
 }
