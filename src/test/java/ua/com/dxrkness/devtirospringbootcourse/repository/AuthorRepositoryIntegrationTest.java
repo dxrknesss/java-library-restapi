@@ -1,5 +1,6 @@
 package ua.com.dxrkness.devtirospringbootcourse.repository;
 
+import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -12,6 +13,8 @@ import ua.com.dxrkness.devtirospringbootcourse.domain.Author;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
+
+import static org.hamcrest.Matchers.containsInAnyOrder;
 
 @SpringBootTest
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
@@ -90,12 +93,11 @@ public class AuthorRepositoryIntegrationTest {
     public void getAuthorsWithAgeGreaterThan_returnsValidAuthors() {
         authorRepository.saveAll(authorList);
 
-        var authorsOlderThan100 = authorRepository.findAllWithAgeGreaterThan(100);
+        var dbOldAuthors = authorRepository.findAllWithAgeGreaterThan(100);
+        var dummyOldAuthors = Set.of(TestDataUtil.createTestAuthorA(), TestDataUtil.createTestAuthorC());
+        System.out.println(dbOldAuthors);
+        System.out.println(dummyOldAuthors);
 
-        System.out.println(authorsOlderThan100);
-        Assertions.assertIterableEquals(
-                Set.of(TestDataUtil.createTestAuthorA(), TestDataUtil.createTestAuthorC()),
-                authorsOlderThan100
-        );
+        MatcherAssert.assertThat(dbOldAuthors, containsInAnyOrder(dummyOldAuthors.toArray()));
     }
 }
