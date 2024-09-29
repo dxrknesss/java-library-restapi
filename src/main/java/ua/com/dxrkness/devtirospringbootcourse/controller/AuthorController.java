@@ -1,5 +1,7 @@
 package ua.com.dxrkness.devtirospringbootcourse.controller;
 
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ua.com.dxrkness.devtirospringbootcourse.domain.dto.AuthorDto;
 import ua.com.dxrkness.devtirospringbootcourse.mappers.AuthorMapper;
@@ -17,10 +19,10 @@ public class AuthorController {
     }
 
     @PostMapping
-    public AuthorDto createAuthor(@RequestBody AuthorDto dto) {
+    public ResponseEntity<AuthorDto> createAuthor(@RequestBody AuthorDto dto) {
         var toSave = authorMapper.dtoToEntity(dto);
         var savedEntity = authorService.create(toSave);
 
-        return authorMapper.entityToDto(savedEntity);
+        return new ResponseEntity<>(authorMapper.entityToDto(savedEntity), HttpStatus.CREATED);
     }
 }
