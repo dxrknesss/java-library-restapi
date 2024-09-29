@@ -95,8 +95,6 @@ public class AuthorRepositoryIntegrationTest {
 
         var dbOldAuthors = authorRepository.findAllWithAgeGreaterThan(100);
         var dummyOldAuthors = Set.of(TestDataUtil.createTestAuthorA(), TestDataUtil.createTestAuthorC());
-        System.out.println(dbOldAuthors);
-        System.out.println(dummyOldAuthors);
 
         MatcherAssert.assertThat(dbOldAuthors, containsInAnyOrder(dummyOldAuthors.toArray()));
     }
