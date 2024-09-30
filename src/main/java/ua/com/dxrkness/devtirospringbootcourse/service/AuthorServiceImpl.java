@@ -5,6 +5,9 @@ import org.springframework.stereotype.Service;
 import ua.com.dxrkness.devtirospringbootcourse.domain.Author;
 import ua.com.dxrkness.devtirospringbootcourse.repository.AuthorRepository;
 
+import java.util.List;
+import java.util.stream.StreamSupport;
+
 @Service
 public class AuthorServiceImpl implements AuthorService {
     private final AuthorRepository authorRepository;
@@ -16,5 +19,13 @@ public class AuthorServiceImpl implements AuthorService {
     @Override
     public Author create(Author newAuthor) {
         return authorRepository.save(newAuthor);
+    }
+
+    @Override
+    public List<Author> findAll() {
+        return StreamSupport.stream(
+                authorRepository.findAll().spliterator(),
+                false
+        ).toList();
     }
 }

@@ -7,6 +7,8 @@ import ua.com.dxrkness.devtirospringbootcourse.domain.dto.AuthorDto;
 import ua.com.dxrkness.devtirospringbootcourse.mappers.AuthorMapper;
 import ua.com.dxrkness.devtirospringbootcourse.service.AuthorService;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/authors")
 public class AuthorController {
@@ -24,5 +26,14 @@ public class AuthorController {
         var savedEntity = authorService.create(toSave);
 
         return new ResponseEntity<>(authorMapper.entityToDto(savedEntity), HttpStatus.CREATED);
+    }
+
+    @GetMapping
+    public ResponseEntity<List<AuthorDto>> listAuthors() {
+        var allAuthors = authorService.findAll();
+
+        return ResponseEntity.ok(allAuthors.stream()
+                .map(authorMapper::entityToDto)
+                .toList());
     }
 }
