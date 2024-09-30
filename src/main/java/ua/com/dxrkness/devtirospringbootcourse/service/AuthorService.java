@@ -8,4 +8,5 @@ public interface AuthorService {
     Author save(Author newAuthor);
     List<Author> findAll();
     Optional<Author> findById(Long authorId);
+    boolean doesExist(Long authorId);
 }

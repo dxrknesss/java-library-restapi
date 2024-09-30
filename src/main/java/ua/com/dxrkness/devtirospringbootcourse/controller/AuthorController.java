@@ -47,4 +47,17 @@ public class AuthorController {
                 ResponseEntity.ok(authorMapper.entityToDto(entity))
         ).orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<AuthorDto> fullAuthorUpdate(@PathVariable("id") Long authorId,
+                                                      @RequestBody AuthorDto updatedDto) {
+        if(authorService.doesExist(authorId)) {
+            updatedDto.setId(authorId);
+
+            var updatedEntity = authorService.save(authorMapper.dtoToEntity(updatedDto));
+            return ResponseEntity.ok(authorMapper.entityToDto(updatedEntity));
+        } else {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+    }
 }

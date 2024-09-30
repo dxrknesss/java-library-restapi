@@ -91,4 +91,34 @@ public class AuthorControllerIntegrationTest {
         mockMvc.perform(MockMvcRequestBuilders.get("/authors/1"))
                 .andExpect(MockMvcResultMatchers.status().isNotFound());
     }
+
+    @Test
+    public void fullyUpdatingAuthorThatExists_returns200Code_andAuthor() throws Exception {
+        authorService.save(author);
+
+        author.setName("UPDATED");
+        var updatedAuthorAsJson = objectMapper.writeValueAsString(author);
+
+        mockMvc.perform(
+                        MockMvcRequestBuilders.put("/authors/1")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(updatedAuthorAsJson))
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andExpectAll(
+                        MockMvcResultMatchers.content().contentType(MediaType.APPLICATION_JSON),
+                        MockMvcResultMatchers.content().json(updatedAuthorAsJson)
+                );
+    }
+
+    @Test
+    public void fullyUpdatingAuthorThatDoesNotExist_returns404Code() throws Exception {
+        author.setName("UPDATED");
+        var updatedAuthorAsJson = objectMapper.writeValueAsString(author);
+
+        mockMvc.perform(
+                MockMvcRequestBuilders.put("/authors/1023")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(updatedAuthorAsJson)
+        ).andExpect(MockMvcResultMatchers.status().isNotFound());
+    }
 }
