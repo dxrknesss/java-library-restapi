@@ -45,4 +45,17 @@ public class BookController {
                 ResponseEntity.ok(bookMapper.entityToDto(bookEntity))
         ).orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
+
+    @PutMapping("/{isbn}")
+    public ResponseEntity<BookDto> fullBookUpdate(@PathVariable("isbn") String isbn,
+                                                  @RequestBody BookDto bookDto) {
+        if (bookService.doesExist(isbn)) {
+            var toUpdate = bookMapper.dtoToEntity(bookDto);
+            var updatedEntity = bookService.save(isbn, toUpdate);
+
+            return ResponseEntity.ok(bookMapper.entityToDto(updatedEntity));
+        } else {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+    }
 }

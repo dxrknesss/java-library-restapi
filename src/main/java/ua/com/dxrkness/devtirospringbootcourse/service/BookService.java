@@ -8,4 +8,5 @@ public interface BookService {
     Book save(String bookIsbn, Book newBook);
     List<Book> findAll();
     Optional<Book> findByIsbn(String bookIsbn);
+    boolean doesExist(String bookIsbn);
 }

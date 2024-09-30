@@ -13,6 +13,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 import ua.com.dxrkness.devtirospringbootcourse.TestDataUtil;
+import ua.com.dxrkness.devtirospringbootcourse.domain.Author;
 import ua.com.dxrkness.devtirospringbootcourse.domain.Book;
 import ua.com.dxrkness.devtirospringbootcourse.service.BookService;
 
@@ -86,6 +87,42 @@ public class BookControllerIntegrationTest {
     @Test
     public void listingOneBookThatDoesNotExist_returns404Code() throws Exception {
         mockMvc.perform(MockMvcRequestBuilders.get("/books/1289043584593"))
+                .andExpect(MockMvcResultMatchers.status().isNotFound());
+    }
+
+    @Test
+    public void fullyUpdatingBookThatExists_returns200Code_andBook() throws Exception {
+        var initialIsbn = book.getIsbn();
+        bookService.save(book.getIsbn(), book);
+
+        book.setIsbn("3304040404404");
+        book.setTitle("UPDATED");
+        book.setAuthor(new Author(2L, null, null));
+        var updatedBookAsJson = objectMapper.writeValueAsString(book);
+
+        book.setIsbn(initialIsbn);
+        var updatedBookWithInitIsbnAsJson = objectMapper.writeValueAsString(book);
+
+        mockMvc.perform(MockMvcRequestBuilders.put("/books/" + initialIsbn)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(updatedBookAsJson))
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andExpectAll(
+                        MockMvcResultMatchers.content().contentType(MediaType.APPLICATION_JSON),
+                        MockMvcResultMatchers.content().json(updatedBookWithInitIsbnAsJson)
+                );
+    }
+
+    @Test
+    public void fullyUpdatingBookThatDoesNotExist_returns404Code() throws Exception {
+        book.setIsbn("3304040404404");
+        book.setTitle("UPDATED");
+        book.setAuthor(new Author(2L, null, null));
+        var updatedBookAsJson = objectMapper.writeValueAsString(book);
+
+        mockMvc.perform(MockMvcRequestBuilders.put("/books/44444")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(updatedBookAsJson))
                 .andExpect(MockMvcResultMatchers.status().isNotFound());
     }
 }
