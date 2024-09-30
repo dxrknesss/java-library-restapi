@@ -13,6 +13,7 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 import ua.com.dxrkness.devtirospringbootcourse.TestDataUtil;
 import ua.com.dxrkness.devtirospringbootcourse.domain.Author;
+import ua.com.dxrkness.devtirospringbootcourse.service.AuthorService;
 
 @SpringBootTest
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
@@ -20,13 +21,17 @@ import ua.com.dxrkness.devtirospringbootcourse.domain.Author;
 public class AuthorControllerIntegrationTest {
     private final MockMvc mockMvc;
     private final ObjectMapper objectMapper;
+    private final AuthorService authorService;
 
     private Author author;
 
     @Autowired
-    public AuthorControllerIntegrationTest(MockMvc mockMvc, ObjectMapper objectMapper) {
+    public AuthorControllerIntegrationTest(
+            MockMvc mockMvc, ObjectMapper objectMapper,
+            AuthorService authorService) {
         this.mockMvc = mockMvc;
         this.objectMapper = objectMapper;
+        this.authorService = authorService;
     }
 
     @BeforeEach
@@ -36,7 +41,7 @@ public class AuthorControllerIntegrationTest {
     }
 
     @Test
-    public void successfullyCreatingAuthor_returns201CreatedCode_andCreatedEntity() throws Exception {
+    public void successfullyCreatingAuthor_returns201Code_andCreatedEntity() throws Exception {
         var authorAsJson = objectMapper.writeValueAsString(author);
 
         mockMvc.perform(
@@ -48,5 +53,17 @@ public class AuthorControllerIntegrationTest {
                 MockMvcResultMatchers.jsonPath("$.name").value(author.getName()),
                 MockMvcResultMatchers.jsonPath("$.age").value(author.getAge())
         );
+    }
+
+    @Test
+    public void listingAuthors_returns200Code_andAllAuthors() throws Exception {
+        var allAuthors = TestDataUtil.createTestAuthorsList();
+        allAuthors.stream().forEach(authorService::create);
+
+        var allAuthorsAsJson = objectMapper.writeValueAsString(allAuthors);
+
+        mockMvc.perform(MockMvcRequestBuilders.get("/authors"))
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andExpect(MockMvcResultMatchers.content().json(allAuthorsAsJson));
     }
 }
