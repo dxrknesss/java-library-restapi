@@ -3,11 +3,13 @@ package ua.com.dxrkness.devtirospringbootcourse.controller;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import ua.com.dxrkness.devtirospringbootcourse.domain.Author;
 import ua.com.dxrkness.devtirospringbootcourse.domain.dto.AuthorDto;
 import ua.com.dxrkness.devtirospringbootcourse.mappers.AuthorMapper;
 import ua.com.dxrkness.devtirospringbootcourse.service.AuthorService;
 
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/authors")
@@ -35,5 +37,14 @@ public class AuthorController {
         return ResponseEntity.ok(allAuthors.stream()
                 .map(authorMapper::entityToDto)
                 .toList());
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<AuthorDto> findAuthorById(@PathVariable("id") Long authorId) {
+        var optionalEntity = authorService.findById(authorId);
+
+        return optionalEntity.map(entity ->
+                ResponseEntity.ok(authorMapper.entityToDto(entity))
+        ).orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
 }

@@ -59,12 +59,36 @@ public class AuthorControllerIntegrationTest {
     @Test
     public void listingAuthors_returns200Code_andAllAuthors() throws Exception {
         var allAuthors = TestDataUtil.createTestAuthorsList();
-        allAuthors.stream().forEach(authorService::create);
+        allAuthors.stream().forEach(authorService::save);
 
         var allAuthorsAsJson = objectMapper.writeValueAsString(allAuthors);
 
         mockMvc.perform(MockMvcRequestBuilders.get("/authors"))
                 .andExpect(MockMvcResultMatchers.status().isOk())
-                .andExpect(MockMvcResultMatchers.content().json(allAuthorsAsJson));
+                .andExpectAll(
+                        MockMvcResultMatchers.content().contentType(MediaType.APPLICATION_JSON),
+                        MockMvcResultMatchers.content().json(allAuthorsAsJson)
+                );
+    }
+
+    @Test
+    public void listingOneAuthorThatExists_returns200Code_andAuthor() throws Exception {
+        authorService.save(author);
+
+        author.setId(1L);
+        var authorAsJson = objectMapper.writeValueAsString(author);
+
+        mockMvc.perform(MockMvcRequestBuilders.get("/authors/1"))
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andExpectAll(
+                        MockMvcResultMatchers.content().contentType(MediaType.APPLICATION_JSON),
+                        MockMvcResultMatchers.content().json(authorAsJson)
+                );
+    }
+
+    @Test
+    public void listingOneAuthorThatDoesNotExist_returns404Code() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders.get("/authors/1"))
+                .andExpect(MockMvcResultMatchers.status().isNotFound());
     }
 }

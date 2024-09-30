@@ -6,6 +6,7 @@ import ua.com.dxrkness.devtirospringbootcourse.domain.Author;
 import ua.com.dxrkness.devtirospringbootcourse.repository.AuthorRepository;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.StreamSupport;
 
 @Service
@@ -27,5 +28,10 @@ public class AuthorServiceImpl implements AuthorService {
                 authorRepository.findAll().spliterator(),
                 false
         ).toList();
+    }
+
+    @Override
+    public Optional<Author> findById(Long authorId) {
+        return authorRepository.findById(authorId);
     }
 }
