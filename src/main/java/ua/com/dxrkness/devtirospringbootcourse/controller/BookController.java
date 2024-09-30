@@ -7,6 +7,8 @@ import ua.com.dxrkness.devtirospringbootcourse.domain.dto.BookDto;
 import ua.com.dxrkness.devtirospringbootcourse.mappers.BookMapper;
 import ua.com.dxrkness.devtirospringbootcourse.service.BookService;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/books")
 public class BookController {
@@ -21,12 +23,17 @@ public class BookController {
     @PostMapping("/{isbn}")
     public ResponseEntity<BookDto> createBook(@PathVariable("isbn") String isbn,
                                               @RequestBody BookDto bookDto) {
-        System.out.println(bookDto);
         var toSave = bookMapper.dtoToEntity(bookDto);
-        System.out.println(toSave);
         var savedEntity = bookService.save(isbn, toSave);
 
-        System.out.println(bookMapper.entityToDto(savedEntity));
         return new ResponseEntity<>(bookMapper.entityToDto(savedEntity), HttpStatus.CREATED);
+    }
+
+    @GetMapping
+    public ResponseEntity<List<BookDto>> getAllBooks() {
+        var allBooksAsEntities = bookService.findAll();
+        var allBooksAsDto = allBooksAsEntities.stream().map(bookMapper::entityToDto).toList();
+
+        return new ResponseEntity<>(allBooksAsDto, HttpStatus.OK);
     }
 }

@@ -28,7 +28,8 @@ public class AuthorControllerIntegrationTest {
     @Autowired
     public AuthorControllerIntegrationTest(
             MockMvc mockMvc, ObjectMapper objectMapper,
-            AuthorService authorService) {
+            AuthorService authorService
+    ) {
         this.mockMvc = mockMvc;
         this.objectMapper = objectMapper;
         this.authorService = authorService;

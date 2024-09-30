@@ -14,9 +14,7 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 import ua.com.dxrkness.devtirospringbootcourse.TestDataUtil;
 import ua.com.dxrkness.devtirospringbootcourse.domain.Book;
-import ua.com.dxrkness.devtirospringbootcourse.domain.dto.AuthorDto;
-
-import static org.hamcrest.Matchers.any;
+import ua.com.dxrkness.devtirospringbootcourse.service.BookService;
 
 @SpringBootTest
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
@@ -24,13 +22,18 @@ import static org.hamcrest.Matchers.any;
 public class BookControllerIntegrationTest {
     private final MockMvc mockMvc;
     private final ObjectMapper objectMapper;
+    private final BookService bookService;
 
     private Book book;
 
     @Autowired
-    public BookControllerIntegrationTest(MockMvc mockMvc, ObjectMapper objectMapper) {
+    public BookControllerIntegrationTest(
+            MockMvc mockMvc, ObjectMapper objectMapper,
+            BookService bookService
+    ) {
         this.mockMvc = mockMvc;
         this.objectMapper = objectMapper;
+        this.bookService = bookService;
     }
 
     @BeforeEach
@@ -50,7 +53,18 @@ public class BookControllerIntegrationTest {
         ).andExpect(MockMvcResultMatchers.status().isCreated()).andExpectAll(
                 MockMvcResultMatchers.jsonPath("$.isbn").value(bookIsbn),
                 MockMvcResultMatchers.jsonPath("$.title").value(book.getTitle())
-//                MockMvcResultMatchers.jsonPath("$.author").value(any(AuthorDto.class))
         );
+    }
+
+    @Test
+    public void listingBooks_returns200Code_andAllBooks() throws Exception {
+        var allBooks = TestDataUtil.createTestBooksList();
+        allBooks.stream()
+                .forEach(book -> bookService.save(book.getIsbn(), book));
+        var allBooksAsJson = objectMapper.writeValueAsString(allBooks);
+
+        mockMvc.perform(MockMvcRequestBuilders.get("/books"))
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andExpect(MockMvcResultMatchers.content().json(allBooksAsJson));
     }
 }
