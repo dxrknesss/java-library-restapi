@@ -4,6 +4,6 @@ import ua.com.dxrkness.devtirospringbootcourse.domain.Author;
 import java.util.List;
 
 public interface AuthorService {
-    Author create(Author newAuthor);
+    Author save(Author newAuthor);
     List<Author> findAll();
 }
