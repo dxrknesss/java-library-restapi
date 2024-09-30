@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.DirtiesContext;
 import ua.com.dxrkness.devtirospringbootcourse.TestDataUtil;
@@ -14,25 +15,22 @@ import java.util.List;
 
 @SpringBootTest
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.ANY)
 public class BookRepositoryIntegrationTest {
-    private final AuthorRepository authorDao;
     private final BookRepository bookRepository;
 
     private Book singleBook;
     private List<Book> bookList;
 
     @Autowired
-    public BookRepositoryIntegrationTest(BookRepository bookRepository, AuthorRepository authorRepository) {
+    public BookRepositoryIntegrationTest(BookRepository bookRepository) {
         this.bookRepository = bookRepository;
-        this.authorDao = authorRepository;
     }
 
     @BeforeEach
     public void setup() {
         singleBook = TestDataUtil.createTestBookA();
         bookList = TestDataUtil.createTestBooksList();
-
-        authorDao.saveAll(TestDataUtil.createTestAuthorsList());
     }
 
     @Test
@@ -42,7 +40,7 @@ public class BookRepositoryIntegrationTest {
         var optionalBook = bookRepository.findById(singleBook.getIsbn());
 
         Assertions.assertTrue(optionalBook.isPresent());
-        Assertions.assertEquals(optionalBook.get(), singleBook);
+        Assertions.assertEquals(singleBook, optionalBook.get());
     }
 
     @Test
@@ -64,7 +62,7 @@ public class BookRepositoryIntegrationTest {
         var bookFromDb = bookRepository.findById(singleBook.getIsbn());
 
         Assertions.assertTrue(bookFromDb.isPresent());
-        Assertions.assertEquals(bookFromDb.get(), singleBook);
+        Assertions.assertEquals(singleBook, bookFromDb.get());
     }
 
     @Test
