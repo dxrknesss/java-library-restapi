@@ -67,4 +67,25 @@ public class BookControllerIntegrationTest {
                 .andExpect(MockMvcResultMatchers.status().isOk())
                 .andExpect(MockMvcResultMatchers.content().json(allBooksAsJson));
     }
+
+    @Test
+    public void listingOneBookThatExists_returns200Code_andBook() throws Exception {
+        bookService.save(book.getIsbn(), book);
+
+        book.getAuthor().setId(1L);
+        var bookAsJson = objectMapper.writeValueAsString(book);
+
+        mockMvc.perform(MockMvcRequestBuilders.get("/books/" + book.getIsbn()))
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andExpectAll(
+                        MockMvcResultMatchers.content().contentType(MediaType.APPLICATION_JSON),
+                        MockMvcResultMatchers.content().json(bookAsJson)
+                );
+    }
+
+    @Test
+    public void listingOneBookThatDoesNotExist_returns404Code() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders.get("/books/1289043584593"))
+                .andExpect(MockMvcResultMatchers.status().isNotFound());
+    }
 }

@@ -5,6 +5,7 @@ import ua.com.dxrkness.devtirospringbootcourse.domain.Book;
 import ua.com.dxrkness.devtirospringbootcourse.repository.BookRepository;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.StreamSupport;
 
 @Service
@@ -26,5 +27,10 @@ public class BookServiceImpl implements BookService {
         return StreamSupport.stream(
                 bookRepository.findAll().spliterator(), false
         ).toList();
+    }
+
+    @Override
+    public Optional<Book> findByIsbn(String bookIsbn) {
+        return bookRepository.findById(bookIsbn);
     }
 }
