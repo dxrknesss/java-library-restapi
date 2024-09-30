@@ -27,11 +27,11 @@ dependencies {
   runtimeOnly(libs.h2)
   runtimeOnly(libs.postgresql)
 
-  implementation(libs.mapstruct)
-  annotationProcessor(libs.mapstruct.processor)
-
   compileOnly(libs.lombok)
   annotationProcessor(libs.lombok)
+
+  implementation(libs.mapstruct)
+  annotationProcessor(libs.mapstruct.processor)
 
   testRuntimeOnly(libs.h2)
   testImplementation(libs.spring.boot.starter.test)
