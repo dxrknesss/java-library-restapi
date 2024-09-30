@@ -1,7 +1,6 @@
 package ua.com.dxrkness.devtirospringbootcourse.controller;
 
 import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ua.com.dxrkness.devtirospringbootcourse.domain.dto.BookDto;
@@ -22,11 +21,12 @@ public class BookController {
     @PostMapping("/{isbn}")
     public ResponseEntity<BookDto> createBook(@PathVariable("isbn") String isbn,
                                               @RequestBody BookDto bookDto) {
-       var toSave = bookMapper.dtoToEntity(bookDto);
-       toSave.setIsbn(isbn);
+        System.out.println(bookDto);
+        var toSave = bookMapper.dtoToEntity(bookDto);
+        System.out.println(toSave);
+        var savedEntity = bookService.save(isbn, toSave);
 
-       var savedEntity = bookService.save(toSave);
-
-       return new ResponseEntity<>(bookMapper.entityToDto(savedEntity), HttpStatus.CREATED);
+        System.out.println(bookMapper.entityToDto(savedEntity));
+        return new ResponseEntity<>(bookMapper.entityToDto(savedEntity), HttpStatus.CREATED);
     }
 }
