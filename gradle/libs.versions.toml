@@ -24,3 +24,4 @@ java-application = { id = "application" }
 spring-boot = { id = "org.springframework.boot", version.ref = "spring-boot-version"  }
 spring-bom = { id = "io.spring.dependency-management", version.ref = "spring-bom-version" }
 graalvm-native-buildTools = { id = "org.graalvm.buildtools.native", version.ref = "graalvm-native-buildTools-version" }
+idea = { id = "idea" }

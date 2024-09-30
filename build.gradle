@@ -3,6 +3,14 @@ plugins {
   alias(libs.plugins.java.application)
   alias(libs.plugins.spring.boot)
   alias(libs.plugins.spring.bom)
+  alias(libs.plugins.idea)
+}
+
+idea {
+  module {
+    downloadSources = true
+    downloadJavadoc = true
+  }
 }
 
 group = 'ua.com.dxrkness'
