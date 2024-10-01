@@ -9,4 +9,5 @@ public interface BookService {
     List<Book> findAll();
     Optional<Book> findByIsbn(String bookIsbn);
     boolean doesExist(String bookIsbn);
+    Book partialUpdate(String isbn, Book partiallyUpdatedBook);
 }

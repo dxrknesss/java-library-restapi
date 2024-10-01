@@ -125,4 +125,46 @@ public class BookControllerIntegrationTest {
                         .content(updatedBookAsJson))
                 .andExpect(MockMvcResultMatchers.status().isNotFound());
     }
+
+    @Test
+    public void partiallyUpdatingBookThatExists_returns200Code_andBook() throws Exception {
+        var initialIsbn = book.getIsbn();
+        var updateName = "partially updated!";
+
+        bookService.save(initialIsbn, book);
+
+        book.setIsbn(null);
+        book.setAuthor(null);
+        book.setTitle(updateName);
+        var partiallyUpdatedBookAsJson = objectMapper.writeValueAsString(book);
+
+        book = bookService.findByIsbn(initialIsbn).get();
+        book.setTitle(updateName);
+        var expectedEntity = objectMapper.writeValueAsString(book);
+
+        mockMvc.perform(MockMvcRequestBuilders.patch("/books/" + initialIsbn)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(partiallyUpdatedBookAsJson))
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andExpectAll(
+                        MockMvcResultMatchers.content().contentType(MediaType.APPLICATION_JSON),
+                        MockMvcResultMatchers.content().json(expectedEntity)
+                );
+    }
+
+    @Test
+    public void partiallyUpdatingBookThatDoesNotExist_returns404Code() throws Exception {
+        var initialIsbn = book.getIsbn();
+        var updateName = "partial update";
+
+        book.setIsbn(null);
+        book.setAuthor(null);
+        book.setTitle(updateName);
+        var partiallyUpdatedBookAsJson = objectMapper.writeValueAsString(book);
+
+        mockMvc.perform(MockMvcRequestBuilders.patch("/books/" + initialIsbn)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(partiallyUpdatedBookAsJson))
+                .andExpect(MockMvcResultMatchers.status().isNotFound());
+    }
 }

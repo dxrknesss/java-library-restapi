@@ -38,4 +38,16 @@ public class BookServiceImpl implements BookService {
     public boolean doesExist(String bookIsbn) {
         return bookRepository.existsById(bookIsbn);
     }
+
+    @Override
+    public Book partialUpdate(String isbn, Book partiallyUpdatedBook) {
+        partiallyUpdatedBook.setIsbn(isbn);
+
+        return bookRepository.findById(isbn).map(bookFromDb -> {
+            Optional.ofNullable(partiallyUpdatedBook.getTitle()).ifPresent(bookFromDb::setTitle);
+            Optional.ofNullable(partiallyUpdatedBook.getAuthor()).ifPresent(bookFromDb::setAuthor);
+
+            return bookFromDb;
+        }).orElseThrow(() -> new RuntimeException("I'm too tired to write this. it's 3 in the morning and I need to get over with this project as fast as possible. "));
+    }
 }

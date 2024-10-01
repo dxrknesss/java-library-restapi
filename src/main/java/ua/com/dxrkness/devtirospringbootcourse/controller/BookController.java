@@ -49,13 +49,28 @@ public class BookController {
     @PutMapping("/{isbn}")
     public ResponseEntity<BookDto> fullBookUpdate(@PathVariable("isbn") String isbn,
                                                   @RequestBody BookDto bookDto) {
-        if (bookService.doesExist(isbn)) {
-            var toUpdate = bookMapper.dtoToEntity(bookDto);
-            var updatedEntity = bookService.save(isbn, toUpdate);
-
-            return ResponseEntity.ok(bookMapper.entityToDto(updatedEntity));
-        } else {
+        if (!bookService.doesExist(isbn)) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
+
+        var updatedEntity = bookService.save(
+                isbn, bookMapper.dtoToEntity(bookDto)
+        );
+
+        return ResponseEntity.ok(bookMapper.entityToDto(updatedEntity));
+    }
+
+    @PatchMapping("/{isbn}")
+    public ResponseEntity<BookDto> partialBookUpdate(@PathVariable("isbn") String isbn,
+                                                     @RequestBody BookDto bookDto) {
+        if (!bookService.doesExist(isbn)) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+
+        var updatedEntity = bookService.partialUpdate(
+                isbn, bookMapper.dtoToEntity(bookDto)
+        );
+
+        return ResponseEntity.ok(bookMapper.entityToDto(updatedEntity));
     }
 }
