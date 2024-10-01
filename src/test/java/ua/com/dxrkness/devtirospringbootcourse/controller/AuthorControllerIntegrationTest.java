@@ -157,4 +157,18 @@ public class AuthorControllerIntegrationTest {
                         .content(partiallyUpdatedAuthorAsJson))
                 .andExpect(MockMvcResultMatchers.status().isNotFound());
     }
+
+    @Test
+    public void deletingAuthorThatExists_returns204Code() throws Exception {
+        authorService.save(author);
+
+        mockMvc.perform(MockMvcRequestBuilders.delete("/authors/1"))
+                .andExpect(MockMvcResultMatchers.status().isNoContent());
+    }
+
+    @Test
+    public void deletingAuthorThatDoesNotExist_returns404Code() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders.delete("/authors/1"))
+                .andExpect(MockMvcResultMatchers.status().isNotFound());
+    }
 }

@@ -10,4 +10,5 @@ public interface AuthorService {
     Optional<Author> findById(Long authorId);
     boolean doesExist(Long authorId);
     Author partialUpdate(Long authorId, Author partiallyUpdatedAuthor);
+    void delete(Long authorId);
 }

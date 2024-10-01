@@ -49,4 +49,9 @@ public class AuthorServiceImpl implements AuthorService {
             return authorRepository.save(authorFromDb);
         }).orElseThrow(() -> new RuntimeException("I'm too tired to write this. it's 3 in the morning and I need to get over with this project as fast as possible. "));
     }
+
+    @Override
+    public void delete(Long authorId) {
+        authorRepository.deleteById(authorId);
+    }
 }

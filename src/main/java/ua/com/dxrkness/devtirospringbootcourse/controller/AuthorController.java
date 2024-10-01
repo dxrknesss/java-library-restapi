@@ -64,11 +64,21 @@ public class AuthorController {
         if (!authorService.doesExist(authorId)) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
-        partiallyUpdatedDto.setId(authorId);
+        partiallyUpdatedDto.setId(authorId); // TODO: refactor this to service layer
 
         var partiallyUpdatedEntity = authorService.partialUpdate(
                 authorId, authorMapper.dtoToEntity(partiallyUpdatedDto)
         );
         return ResponseEntity.ok(authorMapper.entityToDto(partiallyUpdatedEntity));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<AuthorDto> deleteAuthor(@PathVariable("id") Long authorId) {
+        if (!authorService.doesExist(authorId)) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+
+        authorService.delete(authorId);
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 }
