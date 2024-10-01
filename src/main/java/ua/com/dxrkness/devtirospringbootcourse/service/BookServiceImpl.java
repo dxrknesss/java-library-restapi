@@ -50,4 +50,9 @@ public class BookServiceImpl implements BookService {
             return bookFromDb;
         }).orElseThrow(() -> new RuntimeException("I'm too tired to write this. it's 3 in the morning and I need to get over with this project as fast as possible. "));
     }
+
+    @Override
+    public void delete(String bookIsbn) {
+        bookRepository.deleteById(bookIsbn);
+    }
 }

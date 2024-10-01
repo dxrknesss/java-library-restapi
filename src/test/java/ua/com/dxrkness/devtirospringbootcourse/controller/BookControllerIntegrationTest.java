@@ -167,4 +167,18 @@ public class BookControllerIntegrationTest {
                         .content(partiallyUpdatedBookAsJson))
                 .andExpect(MockMvcResultMatchers.status().isNotFound());
     }
+
+    @Test
+    public void deletingBookThatExists_returns204Code() throws Exception {
+        bookService.save(book.getIsbn(), book);
+
+        mockMvc.perform(MockMvcRequestBuilders.delete("/books/" + book.getIsbn()))
+                .andExpect(MockMvcResultMatchers.status().isNoContent());
+    }
+
+    @Test
+    public void deletingBookThatDoesNotExist_returns404Code() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders.delete("/authors/0"))
+                .andExpect(MockMvcResultMatchers.status().isNotFound());
+    }
 }
