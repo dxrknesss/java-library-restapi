@@ -3,13 +3,11 @@ package ua.com.dxrkness.devtirospringbootcourse.controller;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import ua.com.dxrkness.devtirospringbootcourse.domain.Author;
 import ua.com.dxrkness.devtirospringbootcourse.domain.dto.AuthorDto;
 import ua.com.dxrkness.devtirospringbootcourse.mappers.AuthorMapper;
 import ua.com.dxrkness.devtirospringbootcourse.service.AuthorService;
 
 import java.util.List;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/authors")
@@ -51,13 +49,26 @@ public class AuthorController {
     @PutMapping("/{id}")
     public ResponseEntity<AuthorDto> fullAuthorUpdate(@PathVariable("id") Long authorId,
                                                       @RequestBody AuthorDto updatedDto) {
-        if(authorService.doesExist(authorId)) {
-            updatedDto.setId(authorId);
-
-            var updatedEntity = authorService.save(authorMapper.dtoToEntity(updatedDto));
-            return ResponseEntity.ok(authorMapper.entityToDto(updatedEntity));
-        } else {
+        if (!authorService.doesExist(authorId)) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
+        updatedDto.setId(authorId);
+
+        var updatedEntity = authorService.save(authorMapper.dtoToEntity(updatedDto));
+        return ResponseEntity.ok(authorMapper.entityToDto(updatedEntity));
+    }
+
+    @PatchMapping("/{id}")
+    public ResponseEntity<AuthorDto> partialAuthorUpdate(@PathVariable("id") Long authorId,
+                                                         @RequestBody AuthorDto partiallyUpdatedDto) {
+        if (!authorService.doesExist(authorId)) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+        partiallyUpdatedDto.setId(authorId);
+
+        var partiallyUpdatedEntity = authorService.partialUpdate(
+                authorId, authorMapper.dtoToEntity(partiallyUpdatedDto)
+        );
+        return ResponseEntity.ok(authorMapper.entityToDto(partiallyUpdatedEntity));
     }
 }

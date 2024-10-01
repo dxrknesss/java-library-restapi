@@ -9,4 +9,5 @@ public interface AuthorService {
     List<Author> findAll();
     Optional<Author> findById(Long authorId);
     boolean doesExist(Long authorId);
+    Author partialUpdate(Long authorId, Author partiallyUpdatedAuthor);
 }
