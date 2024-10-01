@@ -6,32 +6,38 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
-import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
+import org.springframework.transaction.annotation.Transactional;
 import ua.com.dxrkness.devtirospringbootcourse.TestDataUtil;
 import ua.com.dxrkness.devtirospringbootcourse.domain.Author;
 import ua.com.dxrkness.devtirospringbootcourse.domain.Book;
 import ua.com.dxrkness.devtirospringbootcourse.service.BookService;
 
+import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.hasSize;
+
 @SpringBootTest
-@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 @AutoConfigureMockMvc
+@Transactional
 public class BookControllerIntegrationTest {
     private final MockMvc mockMvc;
     private final ObjectMapper objectMapper;
     private final BookService bookService;
 
     private Book book;
+    private final String initialIsbn = "123-123";
+    private final String updatedTitle = "UPDATED!";
+
 
     @Autowired
     public BookControllerIntegrationTest(
             MockMvc mockMvc, ObjectMapper objectMapper,
-            BookService bookService
-    ) {
+            BookService bookService) {
         this.mockMvc = mockMvc;
         this.objectMapper = objectMapper;
         this.bookService = bookService;
@@ -45,14 +51,13 @@ public class BookControllerIntegrationTest {
     @Test
     public void successfullyCreatingBook_returns201CreatedCode_andCreatedEntity() throws Exception {
         var bookAsJson = objectMapper.writeValueAsString(book);
-        var bookIsbn = "123-123";
 
         mockMvc.perform(
-                MockMvcRequestBuilders.post("/books/" + bookIsbn)
+                MockMvcRequestBuilders.post("/books/" + initialIsbn)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(bookAsJson)
         ).andExpect(MockMvcResultMatchers.status().isCreated()).andExpectAll(
-                MockMvcResultMatchers.jsonPath("$.isbn").value(bookIsbn),
+                MockMvcResultMatchers.jsonPath("$.isbn").value(initialIsbn),
                 MockMvcResultMatchers.jsonPath("$.title").value(book.getTitle())
         );
     }
@@ -62,18 +67,26 @@ public class BookControllerIntegrationTest {
         var allBooks = TestDataUtil.createTestBooksList();
         allBooks.stream()
                 .forEach(book -> bookService.save(book.getIsbn(), book));
-        var allBooksAsJson = objectMapper.writeValueAsString(allBooks);
+        allBooks = bookService.findAll();
 
         mockMvc.perform(MockMvcRequestBuilders.get("/books"))
                 .andExpect(MockMvcResultMatchers.status().isOk())
-                .andExpect(MockMvcResultMatchers.content().json(allBooksAsJson));
+                .andExpectAll(
+                        MockMvcResultMatchers.jsonPath("$.content", hasSize(3)),
+                        MockMvcResultMatchers.jsonPath("$.content.[*].title",
+                                containsInAnyOrder(allBooks.stream().map(Book::getTitle).toArray())),
+                        MockMvcResultMatchers.jsonPath("$.content.[*].isbn",
+                                containsInAnyOrder(allBooks.stream().map(Book::getIsbn).toArray())),
+                        MockMvcResultMatchers.jsonPath("$.content.[*].author.id",
+                                containsInAnyOrder(allBooks.stream().map(book -> book.getAuthor().getId().intValue()).toArray()))
+                );
     }
 
     @Test
     public void listingOneBookThatExists_returns200Code_andBook() throws Exception {
         bookService.save(book.getIsbn(), book);
 
-        book.getAuthor().setId(1L);
+        book.setAuthor(bookService.findByIsbn(book.getIsbn()).get().getAuthor());
         var bookAsJson = objectMapper.writeValueAsString(book);
 
         mockMvc.perform(MockMvcRequestBuilders.get("/books/" + book.getIsbn()))
@@ -92,12 +105,11 @@ public class BookControllerIntegrationTest {
 
     @Test
     public void fullyUpdatingBookThatExists_returns200Code_andBook() throws Exception {
-        var initialIsbn = book.getIsbn();
-        bookService.save(book.getIsbn(), book);
+        bookService.save(initialIsbn, book);
 
         book.setIsbn("3304040404404");
-        book.setTitle("UPDATED");
-        book.setAuthor(new Author(2L, null, null));
+        book.setTitle(updatedTitle);
+        book.setAuthor(bookService.findByIsbn(initialIsbn).get().getAuthor());
         var updatedBookAsJson = objectMapper.writeValueAsString(book);
 
         book.setIsbn(initialIsbn);
@@ -116,30 +128,26 @@ public class BookControllerIntegrationTest {
     @Test
     public void fullyUpdatingBookThatDoesNotExist_returns404Code() throws Exception {
         book.setIsbn("3304040404404");
-        book.setTitle("UPDATED");
+        book.setTitle(updatedTitle);
         book.setAuthor(new Author(2L, null, null));
-        var updatedBookAsJson = objectMapper.writeValueAsString(book);
 
-        mockMvc.perform(MockMvcRequestBuilders.put("/books/44444")
+        mockMvc.perform(MockMvcRequestBuilders.put("/books/-1")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(updatedBookAsJson))
+                        .content(objectMapper.writeValueAsString(book)))
                 .andExpect(MockMvcResultMatchers.status().isNotFound());
     }
 
     @Test
     public void partiallyUpdatingBookThatExists_returns200Code_andBook() throws Exception {
-        var initialIsbn = book.getIsbn();
-        var updateName = "partially updated!";
-
         bookService.save(initialIsbn, book);
 
         book.setIsbn(null);
         book.setAuthor(null);
-        book.setTitle(updateName);
+        book.setTitle(updatedTitle);
         var partiallyUpdatedBookAsJson = objectMapper.writeValueAsString(book);
 
         book = bookService.findByIsbn(initialIsbn).get();
-        book.setTitle(updateName);
+        book.setTitle(updatedTitle);
         var expectedEntity = objectMapper.writeValueAsString(book);
 
         mockMvc.perform(MockMvcRequestBuilders.patch("/books/" + initialIsbn)
@@ -154,31 +162,27 @@ public class BookControllerIntegrationTest {
 
     @Test
     public void partiallyUpdatingBookThatDoesNotExist_returns404Code() throws Exception {
-        var initialIsbn = book.getIsbn();
-        var updateName = "partial update";
-
         book.setIsbn(null);
         book.setAuthor(null);
-        book.setTitle(updateName);
-        var partiallyUpdatedBookAsJson = objectMapper.writeValueAsString(book);
+        book.setTitle(updatedTitle);
 
         mockMvc.perform(MockMvcRequestBuilders.patch("/books/" + initialIsbn)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(partiallyUpdatedBookAsJson))
+                        .content(objectMapper.writeValueAsString(book)))
                 .andExpect(MockMvcResultMatchers.status().isNotFound());
     }
 
     @Test
     public void deletingBookThatExists_returns204Code() throws Exception {
-        bookService.save(book.getIsbn(), book);
+        bookService.save(initialIsbn, book);
 
-        mockMvc.perform(MockMvcRequestBuilders.delete("/books/" + book.getIsbn()))
+        mockMvc.perform(MockMvcRequestBuilders.delete("/books/" + initialIsbn))
                 .andExpect(MockMvcResultMatchers.status().isNoContent());
     }
 
     @Test
     public void deletingBookThatDoesNotExist_returns404Code() throws Exception {
-        mockMvc.perform(MockMvcRequestBuilders.delete("/authors/0"))
+        mockMvc.perform(MockMvcRequestBuilders.delete("/books/-1"))
                 .andExpect(MockMvcResultMatchers.status().isNotFound());
     }
 }

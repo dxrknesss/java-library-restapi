@@ -1,21 +1,22 @@
 package ua.com.dxrkness.devtirospringbootcourse.repository;
 
+import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.transaction.annotation.Transactional;
 import ua.com.dxrkness.devtirospringbootcourse.TestDataUtil;
 import ua.com.dxrkness.devtirospringbootcourse.domain.Book;
 
 import java.util.Collection;
 import java.util.List;
 
-@SpringBootTest
-@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
-@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.ANY)
+import static org.hamcrest.Matchers.containsInAnyOrder;
+
+@DataJpaTest
+@Transactional
 public class BookRepositoryIntegrationTest {
     private final BookRepository bookRepository;
 
@@ -35,9 +36,10 @@ public class BookRepositoryIntegrationTest {
 
     @Test
     public void book_canBeCreated_andThen_retrieved() {
-        bookRepository.save(singleBook);
+        var saved = bookRepository.save(singleBook);
 
         var optionalBook = bookRepository.findById(singleBook.getIsbn());
+        singleBook.setAuthor(saved.getAuthor());
 
         Assertions.assertTrue(optionalBook.isPresent());
         Assertions.assertEquals(singleBook, optionalBook.get());
@@ -49,8 +51,11 @@ public class BookRepositoryIntegrationTest {
 
         var booksFromDb = (Collection<Book>) bookRepository.findAll();
 
+        booksFromDb.forEach(book -> book.getAuthor().setId(null));
+        bookList.forEach(book -> book.getAuthor().setId(null));
+
         Assertions.assertEquals(bookList.size(), booksFromDb.size());
-        Assertions.assertIterableEquals(bookList, booksFromDb);
+        MatcherAssert.assertThat(booksFromDb, containsInAnyOrder(bookList.toArray()));
     }
 
     @Test
@@ -58,8 +63,9 @@ public class BookRepositoryIntegrationTest {
         bookRepository.save(singleBook);
 
         singleBook.setTitle("Updated");
-        bookRepository.save(singleBook);
+        var saved = bookRepository.save(singleBook);
         var bookFromDb = bookRepository.findById(singleBook.getIsbn());
+        singleBook.setAuthor(saved.getAuthor());
 
         Assertions.assertTrue(bookFromDb.isPresent());
         Assertions.assertEquals(singleBook, bookFromDb.get());

@@ -7,29 +7,35 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
-import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
+import org.springframework.transaction.annotation.Transactional;
 import ua.com.dxrkness.devtirospringbootcourse.TestDataUtil;
 import ua.com.dxrkness.devtirospringbootcourse.domain.Author;
 import ua.com.dxrkness.devtirospringbootcourse.service.AuthorService;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.hamcrest.Matchers.*;
+
 @SpringBootTest
-@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 @AutoConfigureMockMvc
+@Transactional
 public class AuthorControllerIntegrationTest {
     private final MockMvc mockMvc;
     private final ObjectMapper objectMapper;
     private final AuthorService authorService;
 
     private Author author;
+    private List<Author> allAuthors;
+    private final String updateName = "UPDATED!";
 
     @Autowired
     public AuthorControllerIntegrationTest(
             MockMvc mockMvc, ObjectMapper objectMapper,
-            AuthorService authorService
-    ) {
+            AuthorService authorService) {
         this.mockMvc = mockMvc;
         this.objectMapper = objectMapper;
         this.authorService = authorService;
@@ -38,7 +44,7 @@ public class AuthorControllerIntegrationTest {
     @BeforeEach
     public void setup() {
         author = TestDataUtil.createTestAuthorA();
-        author.setId(null);
+        allAuthors = TestDataUtil.createTestAuthorsList();
     }
 
     @Test
@@ -57,118 +63,118 @@ public class AuthorControllerIntegrationTest {
 
     @Test
     public void listingAuthors_returns200Code_andAllAuthors() throws Exception {
-        var allAuthors = TestDataUtil.createTestAuthorsList();
-        allAuthors.stream().forEach(authorService::save);
-
-        var allAuthorsAsJson = objectMapper.writeValueAsString(allAuthors);
+        var savedIds = new ArrayList<Integer>(allAuthors.size());
+        allAuthors.forEach(author -> {
+            author.setId(null);
+            savedIds.add(authorService.save(author).getId().intValue());
+        });
 
         mockMvc.perform(MockMvcRequestBuilders.get("/authors"))
                 .andExpect(MockMvcResultMatchers.status().isOk())
                 .andExpectAll(
                         MockMvcResultMatchers.content().contentType(MediaType.APPLICATION_JSON),
-                        MockMvcResultMatchers.content().json(allAuthorsAsJson)
+                        MockMvcResultMatchers.jsonPath("$.[*]", hasSize(allAuthors.size())),
+                        MockMvcResultMatchers.jsonPath("$.[*].id",
+                                containsInAnyOrder(savedIds.toArray())),
+                        MockMvcResultMatchers.jsonPath("$.[*].name",
+                                containsInAnyOrder(allAuthors.stream().map(Author::getName).toArray())),
+                        MockMvcResultMatchers.jsonPath("$.[*].age",
+                                containsInAnyOrder(allAuthors.stream().map(Author::getAge).toArray()))
                 );
     }
 
     @Test
     public void listingOneAuthorThatExists_returns200Code_andAuthor() throws Exception {
-        authorService.save(author);
+        var savedId = authorService.save(author).getId().intValue();
 
-        author.setId(1L);
-        var authorAsJson = objectMapper.writeValueAsString(author);
-
-        mockMvc.perform(MockMvcRequestBuilders.get("/authors/1"))
+        mockMvc.perform(MockMvcRequestBuilders.get("/authors/" + savedId))
                 .andExpect(MockMvcResultMatchers.status().isOk())
                 .andExpectAll(
                         MockMvcResultMatchers.content().contentType(MediaType.APPLICATION_JSON),
-                        MockMvcResultMatchers.content().json(authorAsJson)
+                        MockMvcResultMatchers.jsonPath("$.id", equalTo(savedId)),
+                        MockMvcResultMatchers.jsonPath("$.name", equalTo(author.getName())),
+                        MockMvcResultMatchers.jsonPath("$.age", equalTo(author.getAge()))
                 );
     }
 
     @Test
     public void listingOneAuthorThatDoesNotExist_returns404Code() throws Exception {
-        mockMvc.perform(MockMvcRequestBuilders.get("/authors/1"))
+        mockMvc.perform(MockMvcRequestBuilders.get("/authors/-1"))
                 .andExpect(MockMvcResultMatchers.status().isNotFound());
     }
 
     @Test
     public void fullyUpdatingAuthorThatExists_returns200Code_andAuthor() throws Exception {
-        authorService.save(author);
+        var savedId = authorService.save(author).getId().intValue();
 
-        author.setName("UPDATED");
-        var updatedAuthorAsJson = objectMapper.writeValueAsString(author);
+        author.setName(updateName);
 
-        mockMvc.perform(MockMvcRequestBuilders.put("/authors/1")
+        mockMvc.perform(MockMvcRequestBuilders.put("/authors/" + savedId)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(updatedAuthorAsJson))
+                        .content(objectMapper.writeValueAsString(author)))
                 .andExpect(MockMvcResultMatchers.status().isOk())
                 .andExpectAll(
                         MockMvcResultMatchers.content().contentType(MediaType.APPLICATION_JSON),
-                        MockMvcResultMatchers.content().json(updatedAuthorAsJson)
+                        MockMvcResultMatchers.jsonPath("$.id", equalTo(savedId)),
+                        MockMvcResultMatchers.jsonPath("$.name", equalTo(author.getName())),
+                        MockMvcResultMatchers.jsonPath("$.age", equalTo(author.getAge()))
                 );
     }
 
     @Test
     public void fullyUpdatingAuthorThatDoesNotExist_returns404Code() throws Exception {
-        author.setName("UPDATED");
-        var updatedAuthorAsJson = objectMapper.writeValueAsString(author);
+        author.setName(updateName);
 
-        mockMvc.perform(MockMvcRequestBuilders.put("/authors/1023")
+        mockMvc.perform(MockMvcRequestBuilders.put("/authors/-1")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(updatedAuthorAsJson)
+                .content(objectMapper.writeValueAsString(author))
         ).andExpect(MockMvcResultMatchers.status().isNotFound());
     }
 
     @Test
     public void partiallyUpdatingAuthorThatExists_returns200Code_andAuthor() throws Exception {
-        authorService.save(author);
-        var updateName = "partial update";
+        var savedId = authorService.save(author).getId().intValue();
+        var initAge = author.getAge();
 
         author.setId(null);
         author.setAge(null);
         author.setName(updateName);
-        var partiallyUpdatedAuthorAsJson = objectMapper.writeValueAsString(author);
 
-        author = authorService.findById(1L).get();
-        author.setName(updateName);
-        var expectedEntity = objectMapper.writeValueAsString(author);
-
-        mockMvc.perform(MockMvcRequestBuilders.patch("/authors/1")
+        mockMvc.perform(MockMvcRequestBuilders.patch("/authors/" + savedId)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(partiallyUpdatedAuthorAsJson))
+                        .content(objectMapper.writeValueAsString(author)))
                 .andExpect(MockMvcResultMatchers.status().isOk())
                 .andExpectAll(
                         MockMvcResultMatchers.content().contentType(MediaType.APPLICATION_JSON),
-                        MockMvcResultMatchers.content().json(expectedEntity)
+                        MockMvcResultMatchers.jsonPath("$.id", equalTo(savedId)),
+                        MockMvcResultMatchers.jsonPath("$.name", equalTo(updateName)),
+                        MockMvcResultMatchers.jsonPath("$.age", equalTo(initAge))
                 );
     }
 
     @Test
     public void partiallyUpdatingAuthorThatDoesNotExist_returns404Code() throws Exception {
-        var updateName = "partial update";
-
         author.setId(null);
         author.setAge(null);
         author.setName(updateName);
-        var partiallyUpdatedAuthorAsJson = objectMapper.writeValueAsString(author);
 
-        mockMvc.perform(MockMvcRequestBuilders.patch("/authors/1")
+        mockMvc.perform(MockMvcRequestBuilders.patch("/authors/-1")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(partiallyUpdatedAuthorAsJson))
+                        .content(objectMapper.writeValueAsString(author)))
                 .andExpect(MockMvcResultMatchers.status().isNotFound());
     }
 
     @Test
     public void deletingAuthorThatExists_returns204Code() throws Exception {
-        authorService.save(author);
+        var savedId = authorService.save(author).getId().intValue();
 
-        mockMvc.perform(MockMvcRequestBuilders.delete("/authors/1"))
+        mockMvc.perform(MockMvcRequestBuilders.delete("/authors/" + savedId))
                 .andExpect(MockMvcResultMatchers.status().isNoContent());
     }
 
     @Test
     public void deletingAuthorThatDoesNotExist_returns404Code() throws Exception {
-        mockMvc.perform(MockMvcRequestBuilders.delete("/authors/1"))
+        mockMvc.perform(MockMvcRequestBuilders.delete("/authors/-1"))
                 .andExpect(MockMvcResultMatchers.status().isNotFound());
     }
 }
