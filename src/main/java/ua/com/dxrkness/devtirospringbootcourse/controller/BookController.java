@@ -1,5 +1,7 @@
 package ua.com.dxrkness.devtirospringbootcourse.controller;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -30,11 +32,10 @@ public class BookController {
     }
 
     @GetMapping
-    public ResponseEntity<List<BookDto>> getAllBooks() {
-        var allBooksAsEntities = bookService.findAll();
-        var allBooksAsDto = allBooksAsEntities.stream().map(bookMapper::entityToDto).toList();
+    public ResponseEntity<Page<BookDto>> getAllBooks(Pageable pageable) {
+        var allBooksAsEntities = bookService.findAll(pageable);
 
-        return new ResponseEntity<>(allBooksAsDto, HttpStatus.OK);
+        return new ResponseEntity<>(allBooksAsEntities.map(bookMapper::entityToDto), HttpStatus.OK);
     }
 
     @GetMapping("/{isbn}")
