@@ -6,7 +6,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
@@ -49,7 +48,7 @@ public class BookControllerIntegrationTest {
     }
 
     @Test
-    public void successfullyCreatingBook_returns201CreatedCode_andCreatedEntity() throws Exception {
+    public void creatingNew_shouldReturnCreatedAndEntity() throws Exception {
         var bookAsJson = objectMapper.writeValueAsString(book);
 
         mockMvc.perform(
@@ -63,10 +62,9 @@ public class BookControllerIntegrationTest {
     }
 
     @Test
-    public void listingBooks_returns200Code_andAllBooks() throws Exception {
+    public void listingAll_shouldReturnOkAndAllEntities() throws Exception {
         var allBooks = TestDataUtil.createTestBooksList();
-        allBooks.stream()
-                .forEach(book -> bookService.save(book.getIsbn(), book));
+        allBooks.stream().forEach(book -> bookService.save(book.getIsbn(), book));
         allBooks = bookService.findAll();
 
         mockMvc.perform(MockMvcRequestBuilders.get("/books"))
@@ -83,10 +81,10 @@ public class BookControllerIntegrationTest {
     }
 
     @Test
-    public void listingOneBookThatExists_returns200Code_andBook() throws Exception {
-        bookService.save(book.getIsbn(), book);
+    public void listingExisting_returnsOkAndEntity() throws Exception {
+        var savedToDb = bookService.save(book.getIsbn(), book);
 
-        book.setAuthor(bookService.findByIsbn(book.getIsbn()).get().getAuthor());
+        book.setAuthor(savedToDb.getAuthor());
         var bookAsJson = objectMapper.writeValueAsString(book);
 
         mockMvc.perform(MockMvcRequestBuilders.get("/books/" + book.getIsbn()))
@@ -98,18 +96,18 @@ public class BookControllerIntegrationTest {
     }
 
     @Test
-    public void listingOneBookThatDoesNotExist_returns404Code() throws Exception {
+    public void listingNotExisting_returnsNotFound() throws Exception {
         mockMvc.perform(MockMvcRequestBuilders.get("/books/1289043584593"))
                 .andExpect(MockMvcResultMatchers.status().isNotFound());
     }
 
     @Test
-    public void fullyUpdatingBookThatExists_returns200Code_andBook() throws Exception {
-        bookService.save(initialIsbn, book);
+    public void fullyUpdatingExisting_returnsOkAndEntity() throws Exception {
+        var savedToDb = bookService.save(initialIsbn, book);
 
         book.setIsbn("3304040404404");
         book.setTitle(updatedTitle);
-        book.setAuthor(bookService.findByIsbn(initialIsbn).get().getAuthor());
+        book.setAuthor(savedToDb.getAuthor());
         var updatedBookAsJson = objectMapper.writeValueAsString(book);
 
         book.setIsbn(initialIsbn);
@@ -126,7 +124,7 @@ public class BookControllerIntegrationTest {
     }
 
     @Test
-    public void fullyUpdatingBookThatDoesNotExist_returns404Code() throws Exception {
+    public void fullyUpdatingBookNotExisting_returnsNotFound() throws Exception {
         book.setIsbn("3304040404404");
         book.setTitle(updatedTitle);
         book.setAuthor(new Author(2L, null, null));
@@ -138,17 +136,16 @@ public class BookControllerIntegrationTest {
     }
 
     @Test
-    public void partiallyUpdatingBookThatExists_returns200Code_andBook() throws Exception {
-        bookService.save(initialIsbn, book);
+    public void partiallyUpdatingExisting_returnsOkAndEntity() throws Exception {
+        var savedToDb = bookService.save(initialIsbn, book);
 
         book.setIsbn(null);
         book.setAuthor(null);
         book.setTitle(updatedTitle);
         var partiallyUpdatedBookAsJson = objectMapper.writeValueAsString(book);
 
-        book = bookService.findByIsbn(initialIsbn).get();
-        book.setTitle(updatedTitle);
-        var expectedEntity = objectMapper.writeValueAsString(book);
+        savedToDb.setTitle(updatedTitle);
+        var expectedEntity = objectMapper.writeValueAsString(savedToDb);
 
         mockMvc.perform(MockMvcRequestBuilders.patch("/books/" + initialIsbn)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -161,7 +158,7 @@ public class BookControllerIntegrationTest {
     }
 
     @Test
-    public void partiallyUpdatingBookThatDoesNotExist_returns404Code() throws Exception {
+    public void partiallyUpdatingNonExisting_returnsNotFound() throws Exception {
         book.setIsbn(null);
         book.setAuthor(null);
         book.setTitle(updatedTitle);
@@ -173,7 +170,7 @@ public class BookControllerIntegrationTest {
     }
 
     @Test
-    public void deletingBookThatExists_returns204Code() throws Exception {
+    public void deletingExisting_returnsNoContent() throws Exception {
         bookService.save(initialIsbn, book);
 
         mockMvc.perform(MockMvcRequestBuilders.delete("/books/" + initialIsbn))
@@ -181,7 +178,7 @@ public class BookControllerIntegrationTest {
     }
 
     @Test
-    public void deletingBookThatDoesNotExist_returns404Code() throws Exception {
+    public void deletingNonExisting_returnsNotFound() throws Exception {
         mockMvc.perform(MockMvcRequestBuilders.delete("/books/-1"))
                 .andExpect(MockMvcResultMatchers.status().isNotFound());
     }

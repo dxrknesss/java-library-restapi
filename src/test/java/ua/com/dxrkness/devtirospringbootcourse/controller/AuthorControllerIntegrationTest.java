@@ -28,7 +28,7 @@ public class AuthorControllerIntegrationTest {
     private final ObjectMapper objectMapper;
     private final AuthorService authorService;
 
-    private Author author;
+    private Author expectedAuthor;
     private List<Author> allAuthors;
     private final String updateName = "UPDATED!";
 
@@ -43,21 +43,21 @@ public class AuthorControllerIntegrationTest {
 
     @BeforeEach
     public void setup() {
-        author = TestDataUtil.createTestAuthorA();
+        expectedAuthor = TestDataUtil.createTestAuthorA();
         allAuthors = TestDataUtil.createTestAuthorsList();
     }
 
     @Test
     public void successfullyCreatingAuthor_returns201Code_andCreatedEntity() throws Exception {
-        var authorAsJson = objectMapper.writeValueAsString(author);
+        var authorAsJson = objectMapper.writeValueAsString(expectedAuthor);
 
         mockMvc.perform(MockMvcRequestBuilders.post("/authors")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(authorAsJson)
         ).andExpect(MockMvcResultMatchers.status().isCreated()).andExpectAll(
                 MockMvcResultMatchers.jsonPath("$.id").isNumber(),
-                MockMvcResultMatchers.jsonPath("$.name").value(author.getName()),
-                MockMvcResultMatchers.jsonPath("$.age").value(author.getAge())
+                MockMvcResultMatchers.jsonPath("$.name").value(expectedAuthor.getName()),
+                MockMvcResultMatchers.jsonPath("$.age").value(expectedAuthor.getAge())
         );
     }
 
@@ -85,15 +85,15 @@ public class AuthorControllerIntegrationTest {
 
     @Test
     public void listingOneAuthorThatExists_returns200Code_andAuthor() throws Exception {
-        var savedId = authorService.save(author).getId().intValue();
+        var savedId = authorService.save(expectedAuthor).getId().intValue();
 
         mockMvc.perform(MockMvcRequestBuilders.get("/authors/" + savedId))
                 .andExpect(MockMvcResultMatchers.status().isOk())
                 .andExpectAll(
                         MockMvcResultMatchers.content().contentType(MediaType.APPLICATION_JSON),
                         MockMvcResultMatchers.jsonPath("$.id", equalTo(savedId)),
-                        MockMvcResultMatchers.jsonPath("$.name", equalTo(author.getName())),
-                        MockMvcResultMatchers.jsonPath("$.age", equalTo(author.getAge()))
+                        MockMvcResultMatchers.jsonPath("$.name", equalTo(expectedAuthor.getName())),
+                        MockMvcResultMatchers.jsonPath("$.age", equalTo(expectedAuthor.getAge()))
                 );
     }
 
@@ -105,44 +105,48 @@ public class AuthorControllerIntegrationTest {
 
     @Test
     public void fullyUpdatingAuthorThatExists_returns200Code_andAuthor() throws Exception {
-        var savedId = authorService.save(author).getId().intValue();
+        var actualId = authorService.save(expectedAuthor).getId();
 
-        author.setName(updateName);
+        expectedAuthor.setName(updateName);
+        expectedAuthor.setAge(222);
+        expectedAuthor.setId(actualId); // moral principles stop me from doing this
+        // also, can we even change the expected object?
+        // doesn't it have to stay unchanged during test?
 
-        mockMvc.perform(MockMvcRequestBuilders.put("/authors/" + savedId)
+        mockMvc.perform(MockMvcRequestBuilders.put("/authors/" + expectedAuthor.getId())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(author)))
+                        .content(objectMapper.writeValueAsString(expectedAuthor)))
                 .andExpect(MockMvcResultMatchers.status().isOk())
                 .andExpectAll(
                         MockMvcResultMatchers.content().contentType(MediaType.APPLICATION_JSON),
-                        MockMvcResultMatchers.jsonPath("$.id", equalTo(savedId)),
-                        MockMvcResultMatchers.jsonPath("$.name", equalTo(author.getName())),
-                        MockMvcResultMatchers.jsonPath("$.age", equalTo(author.getAge()))
+                        MockMvcResultMatchers.jsonPath("$.id", equalTo(expectedAuthor.getId().intValue())),
+                        MockMvcResultMatchers.jsonPath("$.name", equalTo(expectedAuthor.getName())),
+                        MockMvcResultMatchers.jsonPath("$.age", equalTo(expectedAuthor.getAge()))
                 );
     }
 
     @Test
     public void fullyUpdatingAuthorThatDoesNotExist_returns404Code() throws Exception {
-        author.setName(updateName);
+        expectedAuthor.setName(updateName);
 
         mockMvc.perform(MockMvcRequestBuilders.put("/authors/-1")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(author))
+                .content(objectMapper.writeValueAsString(expectedAuthor))
         ).andExpect(MockMvcResultMatchers.status().isNotFound());
     }
 
     @Test
     public void partiallyUpdatingAuthorThatExists_returns200Code_andAuthor() throws Exception {
-        var savedId = authorService.save(author).getId().intValue();
-        var initAge = author.getAge();
+        var savedId = authorService.save(expectedAuthor).getId().intValue();
+        var initAge = expectedAuthor.getAge();
 
-        author.setId(null);
-        author.setAge(null);
-        author.setName(updateName);
+        expectedAuthor.setId(null);
+        expectedAuthor.setAge(null);
+        expectedAuthor.setName(updateName);
 
         mockMvc.perform(MockMvcRequestBuilders.patch("/authors/" + savedId)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(author)))
+                        .content(objectMapper.writeValueAsString(expectedAuthor)))
                 .andExpect(MockMvcResultMatchers.status().isOk())
                 .andExpectAll(
                         MockMvcResultMatchers.content().contentType(MediaType.APPLICATION_JSON),
@@ -154,19 +158,19 @@ public class AuthorControllerIntegrationTest {
 
     @Test
     public void partiallyUpdatingAuthorThatDoesNotExist_returns404Code() throws Exception {
-        author.setId(null);
-        author.setAge(null);
-        author.setName(updateName);
+        expectedAuthor.setId(null);
+        expectedAuthor.setAge(null);
+        expectedAuthor.setName(updateName);
 
         mockMvc.perform(MockMvcRequestBuilders.patch("/authors/-1")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(author)))
+                        .content(objectMapper.writeValueAsString(expectedAuthor)))
                 .andExpect(MockMvcResultMatchers.status().isNotFound());
     }
 
     @Test
     public void deletingAuthorThatExists_returns204Code() throws Exception {
-        var savedId = authorService.save(author).getId().intValue();
+        var savedId = authorService.save(expectedAuthor).getId().intValue();
 
         mockMvc.perform(MockMvcRequestBuilders.delete("/authors/" + savedId))
                 .andExpect(MockMvcResultMatchers.status().isNoContent());
