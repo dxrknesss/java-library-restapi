@@ -2,184 +2,163 @@ package ua.com.dxrkness.devtirospringbootcourse.controller;
 
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
-import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
-import org.springframework.transaction.annotation.Transactional;
 import ua.com.dxrkness.devtirospringbootcourse.TestDataUtil;
 import ua.com.dxrkness.devtirospringbootcourse.domain.Author;
 import ua.com.dxrkness.devtirospringbootcourse.domain.Book;
-import ua.com.dxrkness.devtirospringbootcourse.service.BookService;
+import ua.com.dxrkness.devtirospringbootcourse.repository.BookRepository;
 
-import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.hamcrest.Matchers.hasSize;
+import java.util.List;
+
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
 @AutoConfigureMockMvc
-@Transactional
 public class BookControllerIntegrationTest {
     private final MockMvc mockMvc;
     private final ObjectMapper objectMapper;
-    private final BookService bookService;
+    private final BookRepository bookRepository;
 
-    private Book book;
-    private final String initialIsbn = "123-123";
+    private final Book book = TestDataUtil.createTestBookB();
     private final String updatedTitle = "UPDATED!";
-
 
     @Autowired
     public BookControllerIntegrationTest(
             MockMvc mockMvc, ObjectMapper objectMapper,
-            BookService bookService) {
+            BookRepository bookRepository) {
         this.mockMvc = mockMvc;
         this.objectMapper = objectMapper;
-        this.bookService = bookService;
+        this.bookRepository = bookRepository;
     }
 
-    @BeforeEach
-    public void setup() {
-        book = TestDataUtil.createTestBookB();
+    @AfterEach
+    public void teardown() {
+        bookRepository.deleteAll();
     }
 
     @Test
     public void creatingNew_shouldReturnCreatedAndEntity() throws Exception {
-        var bookAsJson = objectMapper.writeValueAsString(book);
+        var initialIsbn = "123-123";
 
-        mockMvc.perform(
-                MockMvcRequestBuilders.post("/books/" + initialIsbn)
+        var responseBody = mockMvc.perform(post("/books/" + initialIsbn)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(bookAsJson)
-        ).andExpect(MockMvcResultMatchers.status().isCreated()).andExpectAll(
-                MockMvcResultMatchers.jsonPath("$.isbn").value(initialIsbn),
-                MockMvcResultMatchers.jsonPath("$.title").value(book.getTitle())
-        );
+                        .content(objectMapper.writeValueAsString(book)))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+        var actualBook = objectMapper.readValue(responseBody, Book.class);
+
+        Assertions.assertEquals(book.getTitle(), actualBook.getTitle());
+        Assertions.assertEquals(initialIsbn, actualBook.getIsbn());
+        Assertions.assertEquals(book.getAuthor(), actualBook.getAuthor());
     }
 
     @Test
     public void listingAll_shouldReturnOkAndAllEntities() throws Exception {
-        var allBooks = TestDataUtil.createTestBooksList();
-        allBooks.stream().forEach(book -> bookService.save(book.getIsbn(), book));
-        allBooks = bookService.findAll();
+        var expectedBooks = bookRepository.saveAll(TestDataUtil.createTestBooksList());
 
-        mockMvc.perform(MockMvcRequestBuilders.get("/books"))
-                .andExpect(MockMvcResultMatchers.status().isOk())
-                .andExpectAll(
-                        MockMvcResultMatchers.jsonPath("$.content", hasSize(3)),
-                        MockMvcResultMatchers.jsonPath("$.content.[*].title",
-                                containsInAnyOrder(allBooks.stream().map(Book::getTitle).toArray())),
-                        MockMvcResultMatchers.jsonPath("$.content.[*].isbn",
-                                containsInAnyOrder(allBooks.stream().map(Book::getIsbn).toArray())),
-                        MockMvcResultMatchers.jsonPath("$.content.[*].author.id",
-                                containsInAnyOrder(allBooks.stream().map(book -> book.getAuthor().getId().intValue()).toArray()))
-                );
+        var responseBody = mockMvc.perform(get("/books"))
+                .andExpectAll(status().isOk(), content().contentType(MediaType.APPLICATION_JSON))
+                .andReturn().getResponse().getContentAsString();
+
+        List<Book> actualBooks = objectMapper
+                .readerForListOf(Book.class)
+                .readValue(objectMapper.readTree(responseBody).findValue("content"));
+
+        Assertions.assertIterableEquals(expectedBooks, actualBooks);
     }
 
     @Test
     public void listingExisting_returnsOkAndEntity() throws Exception {
-        var savedToDb = bookService.save(book.getIsbn(), book);
+        var savedToDb = bookRepository.save(book);
 
-        book.setAuthor(savedToDb.getAuthor());
-        var bookAsJson = objectMapper.writeValueAsString(book);
+        var responseBody = mockMvc.perform(get("/books/" + book.getIsbn()))
+                .andExpectAll(status().isOk(), content().contentType(MediaType.APPLICATION_JSON))
+                .andReturn().getResponse().getContentAsString();
 
-        mockMvc.perform(MockMvcRequestBuilders.get("/books/" + book.getIsbn()))
-                .andExpect(MockMvcResultMatchers.status().isOk())
-                .andExpectAll(
-                        MockMvcResultMatchers.content().contentType(MediaType.APPLICATION_JSON),
-                        MockMvcResultMatchers.content().json(bookAsJson)
-                );
+        Assertions.assertEquals(savedToDb, objectMapper.readValue(responseBody, Book.class));
     }
 
     @Test
     public void listingNotExisting_returnsNotFound() throws Exception {
-        mockMvc.perform(MockMvcRequestBuilders.get("/books/1289043584593"))
-                .andExpect(MockMvcResultMatchers.status().isNotFound());
+        mockMvc.perform(get("/books/-1"))
+                .andExpect(status().isNotFound());
     }
 
     @Test
     public void fullyUpdatingExisting_returnsOkAndEntity() throws Exception {
-        var savedToDb = bookService.save(initialIsbn, book);
+        var savedToDb = bookRepository.save(book);
+        var customBook = new Book("3304040404404", updatedTitle, new Author(222L, updatedTitle, 2));
 
-        book.setIsbn("3304040404404");
-        book.setTitle(updatedTitle);
-        book.setAuthor(savedToDb.getAuthor());
-        var updatedBookAsJson = objectMapper.writeValueAsString(book);
-
-        book.setIsbn(initialIsbn);
-        var updatedBookWithInitIsbnAsJson = objectMapper.writeValueAsString(book);
-
-        mockMvc.perform(MockMvcRequestBuilders.put("/books/" + initialIsbn)
+        var responseBody = mockMvc.perform(put("/books/" + book.getIsbn())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(updatedBookAsJson))
-                .andExpect(MockMvcResultMatchers.status().isOk())
-                .andExpectAll(
-                        MockMvcResultMatchers.content().contentType(MediaType.APPLICATION_JSON),
-                        MockMvcResultMatchers.content().json(updatedBookWithInitIsbnAsJson)
-                );
+                        .content(objectMapper.writeValueAsString(customBook)))
+                .andExpectAll(status().isOk(), content().contentType(MediaType.APPLICATION_JSON))
+                .andReturn().getResponse().getContentAsString();
+        var actualBook = objectMapper.readValue(responseBody, Book.class);
+
+        Assertions.assertEquals(savedToDb.getIsbn(), actualBook.getIsbn());
+        Assertions.assertEquals(customBook.getAuthor().getName(), actualBook.getAuthor().getName());
+        Assertions.assertEquals(customBook.getAuthor().getAge(), actualBook.getAuthor().getAge());
+        Assertions.assertEquals(customBook.getTitle(), actualBook.getTitle());
     }
 
     @Test
-    public void fullyUpdatingBookNotExisting_returnsNotFound() throws Exception {
-        book.setIsbn("3304040404404");
-        book.setTitle(updatedTitle);
-        book.setAuthor(new Author(2L, null, null));
+    public void fullyUpdatingNotExisting_returnsNotFound() throws Exception {
+        var customBook = new Book("3304040404404", updatedTitle, new Author(2L, null, null));
 
-        mockMvc.perform(MockMvcRequestBuilders.put("/books/-1")
+        mockMvc.perform(put("/books/-1")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(book)))
-                .andExpect(MockMvcResultMatchers.status().isNotFound());
+                        .content(objectMapper.writeValueAsString(customBook)))
+                .andExpect(status().isNotFound());
     }
 
     @Test
     public void partiallyUpdatingExisting_returnsOkAndEntity() throws Exception {
-        var savedToDb = bookService.save(initialIsbn, book);
+        var savedToDb = bookRepository.save(book);
+        var customBook = new Book(null, updatedTitle, null);
 
-        book.setIsbn(null);
-        book.setAuthor(null);
-        book.setTitle(updatedTitle);
-        var partiallyUpdatedBookAsJson = objectMapper.writeValueAsString(book);
-
-        savedToDb.setTitle(updatedTitle);
-        var expectedEntity = objectMapper.writeValueAsString(savedToDb);
-
-        mockMvc.perform(MockMvcRequestBuilders.patch("/books/" + initialIsbn)
+        var responseBody = mockMvc.perform(patch("/books/" + book.getIsbn())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(partiallyUpdatedBookAsJson))
-                .andExpect(MockMvcResultMatchers.status().isOk())
-                .andExpectAll(
-                        MockMvcResultMatchers.content().contentType(MediaType.APPLICATION_JSON),
-                        MockMvcResultMatchers.content().json(expectedEntity)
-                );
+                        .content(objectMapper.writeValueAsString(customBook)))
+                .andExpectAll(status().isOk(), content().contentType(MediaType.APPLICATION_JSON))
+                .andReturn().getResponse().getContentAsString();
+        var actualBook = objectMapper.readValue(responseBody, Book.class);
+
+        Assertions.assertEquals(customBook.getTitle(), actualBook.getTitle());
+        Assertions.assertEquals(savedToDb.getIsbn(), actualBook.getIsbn());
+        Assertions.assertEquals(savedToDb.getAuthor(), actualBook.getAuthor());
     }
 
     @Test
     public void partiallyUpdatingNonExisting_returnsNotFound() throws Exception {
-        book.setIsbn(null);
-        book.setAuthor(null);
-        book.setTitle(updatedTitle);
+        var customBook = new Book(null, updatedTitle, null);
 
-        mockMvc.perform(MockMvcRequestBuilders.patch("/books/" + initialIsbn)
+        mockMvc.perform(patch("/books/-1")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(book)))
-                .andExpect(MockMvcResultMatchers.status().isNotFound());
+                        .content(objectMapper.writeValueAsString(customBook)))
+                .andExpect(status().isNotFound());
     }
 
     @Test
     public void deletingExisting_returnsNoContent() throws Exception {
-        bookService.save(initialIsbn, book);
+        bookRepository.save(book);
 
-        mockMvc.perform(MockMvcRequestBuilders.delete("/books/" + initialIsbn))
-                .andExpect(MockMvcResultMatchers.status().isNoContent());
+        mockMvc.perform(delete("/books/" + book.getIsbn()))
+                .andExpect(status().isNoContent());
     }
 
     @Test
     public void deletingNonExisting_returnsNotFound() throws Exception {
-        mockMvc.perform(MockMvcRequestBuilders.delete("/books/-1"))
-                .andExpect(MockMvcResultMatchers.status().isNotFound());
+        mockMvc.perform(delete("/books/-1"))
+                .andExpect(status().isNotFound());
     }
 }
