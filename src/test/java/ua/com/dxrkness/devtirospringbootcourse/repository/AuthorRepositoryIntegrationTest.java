@@ -17,7 +17,7 @@ import java.util.Set;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 
 @DataJpaTest
-@Transactional
+//@Transactional
 public class AuthorRepositoryIntegrationTest {
     private final AuthorRepository authorRepository;
 

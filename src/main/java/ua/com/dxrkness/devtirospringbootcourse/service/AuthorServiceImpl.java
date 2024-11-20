@@ -23,11 +23,13 @@ public class AuthorServiceImpl implements AuthorService {
     }
 
     @Override
+    public List<Author> saveAll(List<Author> newAuthors) {
+        return (List<Author>) authorRepository.saveAll(newAuthors);
+    }
+
+    @Override
     public List<Author> findAll() {
-        return StreamSupport.stream(
-                authorRepository.findAll().spliterator(),
-                false
-        ).toList();
+        return (List<Author>) authorRepository.findAll();
     }
 
     @Override

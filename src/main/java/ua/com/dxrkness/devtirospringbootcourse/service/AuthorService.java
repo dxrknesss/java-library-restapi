@@ -6,6 +6,7 @@ import java.util.Optional;
 
 public interface AuthorService {
     Author save(Author newAuthor);
+    List<Author> saveAll(List<Author> newAuthors);
     List<Author> findAll();
     Optional<Author> findById(Long authorId);
     boolean doesExist(Long authorId);
