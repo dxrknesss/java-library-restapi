@@ -1,6 +1,7 @@
 package ua.com.dxrkness.devtirospringbootcourse.controller;
 
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -8,8 +9,6 @@ import org.springframework.web.bind.annotation.*;
 import ua.com.dxrkness.devtirospringbootcourse.domain.dto.BookDto;
 import ua.com.dxrkness.devtirospringbootcourse.mappers.BookMapper;
 import ua.com.dxrkness.devtirospringbootcourse.service.BookService;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/books")
@@ -32,7 +31,9 @@ public class BookController {
     }
 
     @GetMapping
-    public ResponseEntity<Page<BookDto>> getAllBooks(Pageable pageable) {
+    public ResponseEntity<Page<BookDto>> getAllBooks(@RequestParam(name = "page") int page,
+                                                     @RequestParam(name = "size") int size) {
+        Pageable pageable = PageRequest.of(page, size);
         var allBooksAsEntities = bookService.findAll(pageable);
 
         return new ResponseEntity<>(allBooksAsEntities.map(bookMapper::entityToDto), HttpStatus.OK);

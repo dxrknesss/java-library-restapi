@@ -3,41 +3,46 @@ package ua.com.dxrkness.devtirospringbootcourse.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
-import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.reactive.server.WebTestClient;
+import org.springframework.test.web.servlet.client.MockMvcWebTestClient;
 import ua.com.dxrkness.devtirospringbootcourse.TestDataUtil;
-import ua.com.dxrkness.devtirospringbootcourse.domain.Author;
 import ua.com.dxrkness.devtirospringbootcourse.domain.Book;
 import ua.com.dxrkness.devtirospringbootcourse.repository.BookRepository;
 
+import java.io.IOException;
 import java.util.List;
 
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.junit.jupiter.api.Assertions.*;
 
-@SpringBootTest
-@AutoConfigureMockMvc
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class BookControllerIntegrationTest {
-    private final MockMvc mockMvc;
-    private final ObjectMapper objectMapper;
+    private final WebTestClient testClient;
     private final BookRepository bookRepository;
+    private final ObjectMapper objectMapper;
 
-    private final Book book = TestDataUtil.createTestBookB();
-    private final String updatedTitle = "UPDATED!";
+    private static Book expectedBook;
+    private static List<Book> expectedBookList;
+    private static final String updatedTitle = "UPDATED!";
 
     @Autowired
-    public BookControllerIntegrationTest(
-            MockMvc mockMvc, ObjectMapper objectMapper,
-            BookRepository bookRepository) {
-        this.mockMvc = mockMvc;
-        this.objectMapper = objectMapper;
+    public BookControllerIntegrationTest(BookRepository bookRepository, BookController bookController) {
         this.bookRepository = bookRepository;
+        this.objectMapper = new ObjectMapper();
+
+        testClient = MockMvcWebTestClient
+                .bindToController(bookController)
+                .build();
+    }
+
+    @BeforeEach
+    public void setup() {
+        expectedBook = TestDataUtil.createTestBookA();
+        expectedBookList = TestDataUtil.createTestBooksList();
     }
 
     @AfterEach
@@ -46,119 +51,147 @@ public class BookControllerIntegrationTest {
     }
 
     @Test
-    public void creatingNew_shouldReturnCreatedAndEntity() throws Exception {
+    public void creatingNew_shouldReturnCreatedAndEntity() {
         var initialIsbn = "123-123";
 
-        var responseBody = mockMvc.perform(post("/books/" + initialIsbn)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(book)))
-                .andExpect(status().isCreated())
-                .andReturn().getResponse().getContentAsString();
-        var actualBook = objectMapper.readValue(responseBody, Book.class);
+        var response = testClient.post().uri("/books/" + initialIsbn)
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(expectedBook)
+                .exchange()
+                .expectStatus().isCreated()
+                .expectBody(Book.class)
+                .returnResult();
+        var actualBook = response.getResponseBody();
 
-        Assertions.assertEquals(book.getTitle(), actualBook.getTitle());
-        Assertions.assertEquals(initialIsbn, actualBook.getIsbn());
-        Assertions.assertEquals(book.getAuthor(), actualBook.getAuthor());
+        assertNotNull(actualBook);
+        expectedBook.getAuthor().setId(actualBook.getAuthor().getId()); // sync with author in database
+        assertEquals(expectedBook, actualBook);
     }
 
     @Test
-    public void listingAll_shouldReturnOkAndAllEntities() throws Exception {
-        var expectedBooks = bookRepository.saveAll(TestDataUtil.createTestBooksList());
+    public void listingAll_shouldReturnOkAndAllEntities() {
+        List<Book> expectedBooks = (List<Book>) bookRepository.saveAll(expectedBookList);
 
-        var responseBody = mockMvc.perform(get("/books"))
-                .andExpectAll(status().isOk(), content().contentType(MediaType.APPLICATION_JSON))
-                .andReturn().getResponse().getContentAsString();
+        var response = testClient.get().uri("/books?page=0&size=10")
+                .exchange()
+                .expectStatus().isOk()
+                .expectHeader().contentType(MediaType.APPLICATION_JSON)
+                .expectBody()
+                .returnResult();
+        var responseBody = response.getResponseBody();
+        assertNotNull(responseBody);
 
-        List<Book> actualBooks = objectMapper
-                .readerForListOf(Book.class)
-                .readValue(objectMapper.readTree(responseBody).findValue("content"));
-
-        Assertions.assertIterableEquals(expectedBooks, actualBooks);
+        List<Book> actualBooks;
+        try {
+            actualBooks = objectMapper
+                    .readerForListOf(Book.class)
+                    .readValue(objectMapper.readTree(responseBody).findValue("content"));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        assertTrue(expectedBooks.containsAll(actualBooks));
     }
 
     @Test
-    public void listingExisting_returnsOkAndEntity() throws Exception {
-        var savedToDb = bookRepository.save(book);
+    public void listingExisting_returnsOkAndEntity() {
+        expectedBook = bookRepository.save(expectedBook);
 
-        var responseBody = mockMvc.perform(get("/books/" + book.getIsbn()))
-                .andExpectAll(status().isOk(), content().contentType(MediaType.APPLICATION_JSON))
-                .andReturn().getResponse().getContentAsString();
+        var response = testClient.get().uri("/books/" + expectedBook.getIsbn())
+                .exchange()
+                .expectStatus().isOk()
+                .expectHeader().contentType(MediaType.APPLICATION_JSON)
+                .expectBody(Book.class)
+                .returnResult();
+        var actualBook = response.getResponseBody();
 
-        Assertions.assertEquals(savedToDb, objectMapper.readValue(responseBody, Book.class));
+        assertNotNull(actualBook);
+        assertEquals(expectedBook, actualBook);
     }
 
     @Test
-    public void listingNotExisting_returnsNotFound() throws Exception {
-        mockMvc.perform(get("/books/-1"))
-                .andExpect(status().isNotFound());
+    public void listingNotExisting_returnsNotFound() {
+        testClient.get().uri("/books/-1")
+                .exchange()
+                .expectStatus().isNotFound();
     }
 
     @Test
-    public void fullyUpdatingExisting_returnsOkAndEntity() throws Exception {
-        var savedToDb = bookRepository.save(book);
-        var customBook = new Book("3304040404404", updatedTitle, new Author(222L, updatedTitle, 2));
+    public void fullyUpdatingExisting_returnsOkAndEntity() {
+        expectedBook = bookRepository.save(expectedBook);
+        var customBook = TestDataUtil.createTestBookC();
 
-        var responseBody = mockMvc.perform(put("/books/" + book.getIsbn())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(customBook)))
-                .andExpectAll(status().isOk(), content().contentType(MediaType.APPLICATION_JSON))
-                .andReturn().getResponse().getContentAsString();
-        var actualBook = objectMapper.readValue(responseBody, Book.class);
+        var response = testClient.put().uri("/books/" + expectedBook.getIsbn())
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(customBook)
+                .exchange()
+                .expectStatus().isOk()
+                .expectHeader().contentType(MediaType.APPLICATION_JSON)
+                .expectBody(Book.class)
+                .returnResult();
+        var actualBook = response.getResponseBody();
 
-        Assertions.assertEquals(savedToDb.getIsbn(), actualBook.getIsbn());
-        Assertions.assertEquals(customBook.getAuthor().getName(), actualBook.getAuthor().getName());
-        Assertions.assertEquals(customBook.getAuthor().getAge(), actualBook.getAuthor().getAge());
-        Assertions.assertEquals(customBook.getTitle(), actualBook.getTitle());
+        assertNotNull(actualBook);
+        customBook.setIsbn(expectedBook.getIsbn());
+        assertEquals(customBook, actualBook);
     }
 
     @Test
-    public void fullyUpdatingNotExisting_returnsNotFound() throws Exception {
-        var customBook = new Book("3304040404404", updatedTitle, new Author(2L, null, null));
-
-        mockMvc.perform(put("/books/-1")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(customBook)))
-                .andExpect(status().isNotFound());
+    public void fullyUpdatingNotExisting_returnsNotFound() {
+        testClient.put().uri("/books/-1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(expectedBook)
+                .exchange()
+                .expectStatus().isNotFound();
     }
 
     @Test
-    public void partiallyUpdatingExisting_returnsOkAndEntity() throws Exception {
-        var savedToDb = bookRepository.save(book);
+    public void partiallyUpdatingExisting_returnsOkAndEntity() {
+        expectedBook = bookRepository.save(expectedBook);
         var customBook = new Book(null, updatedTitle, null);
 
-        var responseBody = mockMvc.perform(patch("/books/" + book.getIsbn())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(customBook)))
-                .andExpectAll(status().isOk(), content().contentType(MediaType.APPLICATION_JSON))
-                .andReturn().getResponse().getContentAsString();
-        var actualBook = objectMapper.readValue(responseBody, Book.class);
+        var response = testClient.patch().uri("/books/" + expectedBook.getIsbn())
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(customBook)
+                .exchange()
+                .expectStatus().isOk()
+                .expectHeader().contentType(MediaType.APPLICATION_JSON)
+                .expectBody(Book.class)
+                .returnResult();
+        var actualBook = response.getResponseBody();
 
-        Assertions.assertEquals(customBook.getTitle(), actualBook.getTitle());
-        Assertions.assertEquals(savedToDb.getIsbn(), actualBook.getIsbn());
-        Assertions.assertEquals(savedToDb.getAuthor(), actualBook.getAuthor());
+        assertNotNull(actualBook);
+        expectedBook.setTitle(updatedTitle);
+        assertEquals(expectedBook, actualBook);
     }
 
     @Test
-    public void partiallyUpdatingNonExisting_returnsNotFound() throws Exception {
+    public void partiallyUpdatingNonExisting_returnsNotFound() {
         var customBook = new Book(null, updatedTitle, null);
 
-        mockMvc.perform(patch("/books/-1")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(customBook)))
-                .andExpect(status().isNotFound());
+        testClient.patch().uri("/books/-1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(customBook)
+                .exchange()
+                .expectStatus().isNotFound();
     }
 
     @Test
-    public void deletingExisting_returnsNoContent() throws Exception {
-        bookRepository.save(book);
+    public void deletingExisting_returnsNoContent() {
+        bookRepository.save(expectedBook);
 
-        mockMvc.perform(delete("/books/" + book.getIsbn()))
-                .andExpect(status().isNoContent());
+        testClient.delete().uri("/books/" + expectedBook.getIsbn())
+                .exchange()
+                .expectStatus().isNoContent();
+
+        testClient.get().uri("/books/" + expectedBook.getIsbn())
+                .exchange()
+                .expectStatus().isNotFound();
     }
 
     @Test
-    public void deletingNonExisting_returnsNotFound() throws Exception {
-        mockMvc.perform(delete("/books/-1"))
-                .andExpect(status().isNotFound());
+    public void deletingNonExisting_returnsNotFound() {
+        testClient.delete().uri("/books/-1")
+                .exchange()
+                .expectStatus().isNotFound();
     }
 }

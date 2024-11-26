@@ -51,6 +51,7 @@ public class AuthorControllerIntegrationTest {
                 .returnResult();
 
         var actualAuthor = result.getResponseBody();
+        assertNotNull(actualAuthor);
 
         // expected author will always have id 1, so for it to equal with actual, we need to update it
         expectedAuthor.setId(actualAuthor.getId());
@@ -70,17 +71,15 @@ public class AuthorControllerIntegrationTest {
                 .returnResult();
         var actualAuthors = result.getResponseBody();
 
+        assertNotNull(actualAuthors);
         assertFalse(actualAuthors.isEmpty());
 
         actualAuthors.forEach(actual -> // way easier to do with map
                 // update id for each expected author, otherwise they could differ with actual IDs
                 allAuthors.stream()
                         .filter(expected -> expected.getName().equals(actual.getName()))
-                        .findFirst().get().setId(actual.getId())
+                        .findFirst().orElseThrow().setId(actual.getId())
         );
-
-        System.out.println(actualAuthors);
-        System.out.println(allAuthors);
         assertTrue(actualAuthors.containsAll(allAuthors));
     }
 
@@ -99,14 +98,14 @@ public class AuthorControllerIntegrationTest {
     }
 
     @Test
-    public void gettingNonExistingAuthor_returnsNotFound() throws Exception {
+    public void gettingNonExistingAuthor_returnsNotFound() {
         testClient.get().uri("/authors/-1")
                 .exchange()
                 .expectStatus().isNotFound();
     }
 
     @Test
-    public void fullyUpdatingExistingAuthor_returnsOkAndEntity() throws Exception {
+    public void fullyUpdatingExistingAuthor_returnsOkAndEntity() {
         expectedAuthor = authorService.save(expectedAuthor);
 
         expectedAuthor.setName(updateName);
@@ -125,7 +124,7 @@ public class AuthorControllerIntegrationTest {
     }
 
     @Test
-    public void fullyUpdatingNonExistingAuthor_returnsNotFound() throws Exception {
+    public void fullyUpdatingNonExistingAuthor_returnsNotFound() {
         expectedAuthor.setName(updateName);
 
         testClient.put().uri("/authors/-1")
@@ -136,7 +135,7 @@ public class AuthorControllerIntegrationTest {
     }
 
     @Test
-    public void partiallyUpdatingExistingAuthor_returnsOkAndEntity() throws Exception {
+    public void partiallyUpdatingExistingAuthor_returnsOkAndEntity() {
         expectedAuthor = authorService.save(expectedAuthor);
 
         expectedAuthor.setName(updateName);
@@ -154,7 +153,7 @@ public class AuthorControllerIntegrationTest {
     }
 
     @Test
-    public void partiallyUpdatingNonExistingAuthor_returnsNotFound() throws Exception {
+    public void partiallyUpdatingNonExistingAuthor_returnsNotFound() {
         testClient.patch().uri("/authors/-1")
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(authorOnlyName)
@@ -163,7 +162,7 @@ public class AuthorControllerIntegrationTest {
     }
 
     @Test
-    public void deletingExistingAuthor_returnsNoContent() throws Exception {
+    public void deletingExistingAuthor_returnsNoContent() {
         var savedId = authorService.save(expectedAuthor).getId().intValue();
 
         testClient.delete().uri("/authors/" + savedId)
@@ -176,7 +175,7 @@ public class AuthorControllerIntegrationTest {
     }
 
     @Test
-    public void deletingNonExistingAuthor_returnsNotFound() throws Exception {
+    public void deletingNonExistingAuthor_returnsNotFound() {
         testClient.delete().uri("/authors/-1")
                 .exchange()
                 .expectStatus().isNotFound();
